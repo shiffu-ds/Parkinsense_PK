@@ -1,0 +1,39 @@
+[project]
+name = "parkinsense-pk"
+version = "0.1.0"
+description = "Longitudinal functional monitoring with patient and clinician Streamlit workflows"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "streamlit>=1.61,<2",
+  "streamlit-webrtc>=0.63,<1",
+  "sqlalchemy>=2.0,<3",
+  "psycopg[binary]>=3.2,<4",
+  "python-dotenv>=1.0,<2",
+  "cryptography>=46,<51",
+  "numpy>=1.26,<3",
+  "pandas>=2.2,<3",
+  "scipy>=1.13,<2",
+  "scikit-learn>=1.5,<2",
+  "joblib>=1.4,<2",
+  "pyarrow>=17,<23",
+  "plotly>=5.24,<7",
+  "opencv-contrib-python>=4.10,<5",
+  "mediapipe>=0.10.20,<0.11",
+  "soundfile>=0.12,<1",
+  "librosa>=0.10.2,<0.12",
+]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "ruff>=0.11,<1"]
+mcp = ["mcp>=1.10,<2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E9", "F"]

@@ -1,0 +1,1 @@
+"""ParkinSense-PK Streamlit application."""
