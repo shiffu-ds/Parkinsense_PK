@@ -72,7 +72,7 @@ def test_pose_and_hand_replay_have_world_3d_controls_and_no_2d_overlay(task, joi
     assert any(trace["type"] == "mesh3d" for trace in figure["data"])
     assert len(figure["frames"]) == 3
     assert len(figure["layout"]["sliders"][0]["steps"]) == 3
-    assert [item["label"] for item in figure["layout"]["updatemenus"][0]["buttons"]] == ["▶ Play", "Pause"]
+    assert [item["label"] for item in figure["layout"]["updatemenus"][0]["buttons"]] == ["▶ Play · 1×", "Pause"]
     controls["Camera view"].set_value("Side")
     controls["Model style"].set_value("Skeleton")
     controls["Playback speed"].set_value(0.5).run()
@@ -80,7 +80,10 @@ def test_pose_and_hand_replay_have_world_3d_controls_and_no_2d_overlay(task, joi
     changed = _figure(app)
     assert changed["layout"]["scene"]["camera"]["eye"] == motion_studio.CAMERAS["Side"]
     assert all(trace["type"] == "scatter3d" for trace in changed["data"])
-    assert changed["layout"]["updatemenus"][0]["buttons"][0]["args"][1]["frame"]["duration"] == 200
+    playback = changed["layout"]["updatemenus"][0]["buttons"][0]
+    assert playback["label"] == "▶ Play · 0.5×"
+    assert [frame["duration"] for frame in playback["args"][1]["frame"]] == [200, 200, 0]
+    assert changed["layout"]["meta"]["playback_speed"] == 0.5
 
 
 def test_baseline_is_only_rendered_after_user_chooses_comparison():

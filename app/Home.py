@@ -19,6 +19,7 @@ from app.components.validation_review import validation_page
 from app.components.clinic_pilot import clinic_pilot_page
 from backend.production import verify_session_revision
 from app.components.patient_navigation import navigation_label
+from app.components.public_demo import public_demo_page
 
 st.set_page_config(page_title="ParkinSense-PK", page_icon=":material/accessibility_new:", layout="wide")
 
@@ -68,7 +69,10 @@ def nav_title(label):
 
 
 if actor is None:
-    render(st.navigation([st.Page(views.auth_page, title=nav_title("Welcome"), default=True)]))
+    render(st.navigation([
+        st.Page(views.auth_page, title=nav_title("Welcome"), default=True),
+        st.Page(public_demo_page, title="Try a public demo", url_path="public-demo"),
+    ]))
 else:
     st.session_state.update(logged_in=True, role=actor["role"], active_patient_id=actor.get("patient_id"))
     with st.sidebar:

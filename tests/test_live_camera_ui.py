@@ -7,6 +7,8 @@ from types import SimpleNamespace
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from ml.vision.tasks import TASKS
+
 
 def observation(task="gait", *, world=True, timestamp=1.0):
     """Invented XYZ used only to exercise rendering, never clinical inference."""
@@ -136,7 +138,7 @@ def test_disconnect_and_reconnect_never_reuse_previous_processor_or_geometry():
     assert replacement.snapshot_calls == [True]
 
 
-@pytest.mark.parametrize("task", ["finger_left", "finger_right", "gait", "reach", "sit_to_stand"])
+@pytest.mark.parametrize("task", TASKS)
 def test_each_live_task_has_actual_3d_plot_and_an_explicit_body_part_focus(task):
     processor = FakeProcessor(task)
     ctx = SimpleNamespace(video_processor=processor, state=SimpleNamespace(playing=True))

@@ -122,6 +122,13 @@ def auth_page():
     st.title("Movement, with everyday life in view")
     st.write("Record a task, tell your care team how the day felt, and return to your progress when you're ready.")
     st.caption("A local workspace for patient recordings and clinician review. Measurement summaries support discussion; diagnosis and treatment decisions belong with your clinician.")
+    with st.container(border=True):
+        st.subheader("Pehli dafa istemal kar rahe hain?")
+        st.write("Pehle public example par tareeqa dekhein: **recording chunein → Analyze karein → graphs aur report kholein**.")
+        if st.button("Try a public demo — bina login", key="open_public_demo", type="primary"):
+            from app.components.public_demo import public_demo_page
+            st.switch_page(st.Page(public_demo_page, title="Try a public demo", url_path="public-demo"))
+        st.caption("Apni recording ke liye neeche login karein, phir Start Assessment → movement task → Upload ya Live Camera chunein.")
     login, register = st.tabs(["Log in", "Register"])
     with login, st.form("login"):
         email = st.text_input("Email", key="login_email")
@@ -454,8 +461,9 @@ def baseline_for(task, excluding=None, pid=None, current=None):
             continue
         result = visit.get("modules", {}).get(task)
         if result and is_accepted(result):
-            if current and (result.get("method", result.get("analysis_version")) != current.get("method", current.get("analysis_version")) or result.get("language") != current.get("language")):
-                return None
+            if current and ((result.get("method") or result.get("analysis_version")) != (current.get("method") or current.get("analysis_version"))
+                            or result.get("language") != current.get("language") or result.get("task") != current.get("task")):
+                continue
             return result
     return None
 
@@ -469,6 +477,8 @@ def review_result(result, task, baseline=None, media_path=None, history_items=No
     accepted = is_accepted(result)
     self_report = task in {"adl", "nlp"}
     (st.success if accepted else st.warning)(text("accepted_responses" if accepted and self_report else "accepted_recording" if accepted else "retry", language))
+    if accepted and not self_report:
+        st.info(text("task_review_required", language))
     identity = identity or (str(media_path) if media_path else hashlib.sha256(json.dumps(result, sort_keys=True, default=str).encode()).hexdigest()) + task
     render_guidance(result, task, language=actor()["language"], identity=f"{identity}_guidance")
     if accepted and result.get("landmark_frames"):
@@ -547,8 +557,14 @@ def voice_page():
     current = services.get_assessment(actor()["id"], item["id"])
     _show_current_analysis(current, f"voice_{task}")
     st.caption(text("asr_unavailable", ui_language))
-    with st.form("transcript"):
-        transcript = st.text_area(text("transcript", ui_language), max_chars=5000)
+    saved_text_result = current.get("modules", {}).get("nlp", {})
+    saved_text = saved_text_result.get("reviewed_text", "") if is_accepted(saved_text_result) else ""
+    saved_text = saved_text if isinstance(saved_text, str) and len(saved_text) <= 5000 else ""
+    transcript_key = f"transcript_{item['id']}"
+    if transcript_key not in st.session_state:
+        st.session_state[transcript_key] = saved_text
+    with st.form(f"transcript_form_{item['id']}"):
+        transcript = st.text_area(text("transcript", ui_language), max_chars=5000, key=transcript_key)
         if st.form_submit_button(text("save_description", ui_language)):
             try:
                 result = analyze_text(transcript, language)
@@ -571,10 +587,22 @@ def adl_page():
     st.title(text("adl_title", language))
     write_patient(text("adl_intro", language), language)
     st.caption(text("adl_caveat", language))
-    with st.form("adl"):
+    saved = item.get("modules", {}).get("adl", {})
+    saved_responses = saved.get("responses", {}) if is_accepted(saved) else {}
+    saved_responses = saved_responses if isinstance(saved_responses, dict) else {}
+    for key in ADL_ITEMS:
+        answer_key = f"adl_answer_{item['id']}_{key}"
+        if answer_key not in st.session_state:
+            answer = saved_responses.get(key)
+            st.session_state[answer_key] = answer if type(answer) is int and answer in range(5) else None
+    note_key = f"adl_note_{item['id']}"
+    if note_key not in st.session_state:
+        note = saved.get("other_difficulty", "") if is_accepted(saved) else ""
+        st.session_state[note_key] = note if isinstance(note, str) and len(note) <= 2000 else ""
+    with st.form(f"adl_{item['id']}"):
         values = {key: st.selectbox(adl_label(key, language), options=list(range(5)), index=None,
             placeholder=text("choose_experience", language), format_func=lambda value: adl_choice(value, language), key=f"adl_answer_{item['id']}_{key}") for key in ADL_ITEMS}
-        values["other_difficulty"] = st.text_area(text("other_difficulty", language), max_chars=2000)
+        values["other_difficulty"] = st.text_area(text("other_difficulty", language), max_chars=2000, key=note_key)
         if st.form_submit_button(text("save_adl", language), type="primary"):
             try:
                 result = analyze_adl(values)

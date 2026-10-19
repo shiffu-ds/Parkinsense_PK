@@ -104,6 +104,35 @@ def test_unanswered_adl_shows_numbered_steps_and_downloadable_fault_report(patie
     assert "<ol>" in attempt["html"] and "Recording quality report" in attempt["html"]
 
 
+def test_attempt_report_download_reaches_private_link_across_clock_change(patient_visit, monkeypatch):
+    from datetime import datetime, timedelta, timezone
+    from ml.inference import patient_report
+    patient, visit = patient_visit
+    class MovingClock(datetime):
+        calls = 0
+
+        @classmethod
+        def now(cls, tz=None):
+            cls.calls += 1
+            return datetime(2026, 10, 19, tzinfo=timezone.utc) + timedelta(minutes=cls.calls)
+
+    monkeypatch.setattr(patient_report, "datetime", MovingClock)
+    app = adl_app(patient, visit)
+    from backend.production import session_revision
+    app.session_state["auth_revision"] = session_revision(patient["id"])
+    save_adl(app)
+    next(button for button in app.button if button.label == "Download analysis report").click().run()
+    assert not app.exception
+    links = [item for item in app.get("link_button") if item.label == "Download analysis report"]
+    assert len(links) == 1
+    assert not app.get("download_button")  # Remains private; no public media endpoint.
+    assert MovingClock.calls == 1
+    url = links[0].proto.url
+    app.run()
+    assert next(item for item in app.get("link_button") if item.label == "Download analysis report").proto.url == url
+    assert services.get_assessment(patient["id"], visit["id"])["reports"] == []
+
+
 def test_failed_adl_reanalysis_replaces_latest_preview_but_preserves_saved_evidence(patient_visit, rendered_reports):
     patient, visit = patient_visit
     app = adl_app(patient, visit)

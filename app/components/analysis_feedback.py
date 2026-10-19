@@ -37,11 +37,15 @@ def attempt_report_panel(user, assessment, task, result, *, identity):
                "report_type": "attempt_preview", "review_status": "pending",
                "review_note": None, "reviewed_by": None, "reviewed_at": None,
                "clinical_measurements": []}
-    report = build_patient_report(preview, language=user["language"])
     token = hashlib.sha256(str(identity).encode()).hexdigest()[:16]
+    from .report_document import session_report_html
+    patient_name = _patient_name(user, assessment)
+    document = session_report_html(f"attempt_report_document_{token}",
+        {"actor_id": user["id"], "preview": preview, "language": user["language"], "patient_name": patient_name},
+        lambda: render_patient_report_html(build_patient_report(preview, language=user["language"]), patient_name=patient_name))
     with st.expander("Download this analysis report"):
         st.caption("This report describes this analysis attempt. An accepted result enters your saved visit report after you save it. Rejected recordings have quality feedback and steps to try again.")
-        private_download("Download analysis report", render_patient_report_html(report, patient_name=_patient_name(user, assessment)),
+        private_download("Download analysis report", document,
                          user=user, assessment_id=assessment["id"], file_name=f"parkinsense-{task}-analysis.html", mime="text/html", key=f"attempt_report_{token}")
         st.caption("Open the downloaded HTML report in a browser to read or print it, including Save as PDF. It contains private health information.")
 

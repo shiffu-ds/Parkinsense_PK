@@ -1,0 +1,68 @@
+{
+  "status": "accepted",
+  "task": "audio_sentence",
+  "language": "english",
+  "quality": {
+    "accepted": true,
+    "messages": [
+      "Usable audio signal; confirm the selected speech task was completed."
+    ],
+    "duration_seconds": 30.0,
+    "active_fraction": 0.7248165443629087,
+    "clipping_fraction": 0.0,
+    "source_sample_rate": 44100,
+    "task_completion": "requires_human_confirmation",
+    "speech_presence": "signal_activity_proxy"
+  },
+  "features": {
+    "duration_seconds": 30.0,
+    "signal_rms_dbfs": -34.82327955396508,
+    "signal_active_fraction": 0.7248165443629087,
+    "internal_pause_count": 6,
+    "internal_pause_seconds": 4.54,
+    "spectral_centroid_mean_hz": 1812.807365542501,
+    "spectral_centroid_std_hz": 1283.267355853888,
+    "clipping_fraction": 0.0,
+    "mfcc_01_mean": -67.65157108456083,
+    "mfcc_02_mean": 7.1225351872678,
+    "mfcc_03_mean": 5.525927170507256,
+    "mfcc_04_mean": 2.070437925367941,
+    "mfcc_05_mean": -0.18515552900934212,
+    "mfcc_06_mean": 0.0012430138688873079,
+    "mfcc_07_mean": -1.3781733872340223,
+    "mfcc_08_mean": 0.1320081607997799,
+    "mfcc_09_mean": -0.6724046835479568,
+    "mfcc_10_mean": -0.4013007533288275,
+    "mfcc_11_mean": 1.0044112633927686,
+    "mfcc_12_mean": -0.7270346003713196,
+    "mfcc_13_mean": -0.5553819098709581,
+    "f0_autocorrelation_median_hz": 120.30075187969925,
+    "f0_autocorrelation_std_hz": 27.8672213372677,
+    "f0_periodicity_mean": 0.7128343703502809
+  },
+  "method": "acoustic-features-1.0",
+  "transcript": null,
+  "asr": {
+    "status": "unavailable",
+    "reason": "No local ASR model configured. Enter a reviewed transcript."
+  },
+  "provenance": {
+    "source": "local_wav_measurement",
+    "processed_sample_rate": 16000,
+    "preprocessing": [
+      "DC removal",
+      "polyphase resampling",
+      "working-copy peak normalization"
+    ],
+    "feature_units": {
+      "mfcc": "log-mel DCT units",
+      "pitch": "Hz, autocorrelation estimate"
+    }
+  },
+  "limitations": [
+    "Acoustic measurements are not clinical scores.",
+    "Energy segmentation is not validated voice activity detection.",
+    "No speech rate, jitter, shimmer, transcription, or diagnosis is inferred.",
+    "Microphone, gain, room, task and distance affect comparison."
+  ]
+}

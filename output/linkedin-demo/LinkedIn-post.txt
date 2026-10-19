@@ -1,0 +1,19 @@
+I've been building ParkinSense PK to explore a practical question: can recordings of everyday movement and speech be made easier to review?
+
+This short demo shows real-recording outputs for walking, finger tapping and voice, including 3D landmark replays, signal features and a report summary. The application also includes sit-to-stand, reach/grasp and daily-activity sections.
+
+The latest archived software suite passed 463 tests. I also reran the three media examples used for this film. Those checks tell me the software runs; they do not establish clinical accuracy.
+
+One finding worth sharing: video quality checks can accept the wrong exercise. Task confirmation still needs human review. Independent measurement validation, patient usability and clinic evaluation are the next steps.
+
+This is a research prototype, not a diagnostic tool. The film is an edited visualization of recorded analysis outputs, not a live screen recording.
+
+I'd welcome feedback from neurologists, physiotherapists and researchers on what would make these measurements useful in practice.
+
+Source credits (CC BY 4.0; derived visualizations, no endorsement implied):
+• Gait: Eva Schaeffer, Gerd Linke & Daniela Berg (2016), “Cueing for Levodopa-Induced Dyskinesias in Parkinson’s Disease,” Video S1. https://doi.org/10.3389/fneur.2016.00237
+• Hand: Narongrit Kasemsap (2025), “Example Video Finger tapping for bradykinesia detection.” Participant diagnosis unspecified. https://figshare.com/articles/dataset/28930706
+• Voice: Hagen Jaeger, Dhaval Trivedi & Michael Stadtschnitzer, MDVR-KCL. https://doi.org/10.5281/zenodo.2867216
+Licence: https://creativecommons.org/licenses/by/4.0/
+
+#DigitalHealth #HealthTech #ComputerVision #ParkinsonsResearch #BuildInPublic

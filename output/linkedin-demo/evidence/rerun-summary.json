@@ -1,0 +1,19 @@
+[
+  {
+    "id": "clinical-pd-gait-indoor-2016",
+    "accepted": true,
+    "elapsed_s": 3.82,
+    "sha256": "cedbe32acfc79b4bd5d5e78cbb4b9428a42f2f2c186e3fe8dac32a7e5f0c6c6f"
+  },
+  {
+    "id": "research-finger-left",
+    "accepted": true,
+    "elapsed_s": 10.66,
+    "sha256": "ad06559cb7d0f5dd1c9457895daa740d4bd411f8f439d6a860f67a6dfa984e4f"
+  },
+  {
+    "id": "mdvr-pd-reading-30-60s",
+    "accepted": true,
+    "sha256": "30b93d5a0d7181269ae1ec9a605b5c2377b63bfb99383c3b6557fbf0d8e5bcfd"
+  }
+]

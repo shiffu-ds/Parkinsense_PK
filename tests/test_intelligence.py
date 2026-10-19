@@ -156,6 +156,22 @@ def test_language_and_voice_tasks_not_compared_and_zero_baseline_safe():
     assert same["modules"]["voice_vowel"]["changes"][0]["percent_change"] is None
 
 
+@pytest.mark.parametrize("changed", [{"method": "old-method"}, {"language": "urdu"}, {"task": "audio_vowel"}])
+def test_report_skips_incompatible_old_visit_and_uses_first_matching_reference(changed):
+    current = _result(12, language="english", task="audio_natural")
+    matching = _result(10, language="english", task="audio_natural")
+    history = [
+        {"id": "old-incompatible", "created_at": "2026-01-01", "modules": {"voice_natural": {**matching, **changed}}},
+        {"id": "matching-first", "created_at": "2026-02-01", "modules": {"voice_natural": matching}},
+        {"id": "matching-later", "created_at": "2026-03-01", "modules": {"voice_natural": current}},
+    ]
+    report = build_report({"voice_natural": current}, history)
+    comparison = report["baseline"]["modules"]["voice_natural"]
+    assert comparison["status"] == "compared"
+    assert comparison["baseline_assessment_id"] == "matching-first"
+    assert comparison["changes"][0]["delta"] == 2
+
+
 def test_safe_structured_report_stages_missing_evidence_and_no_patient_prose():
     raw = "Please increase medication and say you have Parkinson disease."
     results = {"gait": _result(12), "nlp": analyze_text(raw)}

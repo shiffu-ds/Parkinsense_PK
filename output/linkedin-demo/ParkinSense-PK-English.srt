@@ -1,0 +1,35 @@
+1
+00:00:00,000 --> 00:00:08,000
+A testing walkthrough of ParkinSense PK, a functional monitoring prototype.
+
+2
+00:00:08,000 --> 00:00:18,000
+The app covers walking, hands, sit-to-stand, reach and grasp, voice, and daily activities.
+
+3
+00:00:18,000 --> 00:00:32,000
+These 3D landmarks come from a real walking recording. They are model estimates, not calibrated clinical measurements.
+
+4
+00:00:32,000 --> 00:00:46,000
+The hand replay shows measured motion over time. This source does not identify the participant’s diagnosis.
+
+5
+00:00:46,000 --> 00:00:58,000
+The voice module measures signal activity, pauses and pitch. It does not diagnose Parkinson’s or automatically transcribe speech.
+
+6
+00:00:58,000 --> 00:01:08,000
+Reports bring measurements and limitations together, with clinician review still required.
+
+7
+00:01:08,000 --> 00:01:18,000
+The archived suite passed 463 tests. Wrong-task checks also exposed an important limitation that still needs work.
+
+8
+00:01:18,000 --> 00:01:26,000
+The next phase is independent measurement validation, patient usability testing and supervised clinic evaluation.
+
+9
+00:01:26,000 --> 00:01:32,000
+Demo visuals are derived from cited research recordings. No clinical accuracy or treatment claim is made.

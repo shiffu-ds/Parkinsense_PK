@@ -1,0 +1,56 @@
+[
+  {
+    "start_s": 0,
+    "end_s": 8,
+    "title": "Movement deserves",
+    "caption": "A testing walkthrough of ParkinSense PK, a functional monitoring prototype."
+  },
+  {
+    "start_s": 8,
+    "end_s": 18,
+    "title": "Six assessment sections",
+    "caption": "The app covers walking, hands, sit-to-stand, reach and grasp, voice, and daily activities."
+  },
+  {
+    "start_s": 18,
+    "end_s": 32,
+    "title": "Walking, in three dimensions",
+    "caption": "These 3D landmarks come from a real walking recording. They are model estimates, not calibrated clinical measurements."
+  },
+  {
+    "start_s": 32,
+    "end_s": 46,
+    "title": "Small movements. Visible patterns.",
+    "caption": "The hand replay shows measured motion over time. This source does not identify the participant\u2019s diagnosis."
+  },
+  {
+    "start_s": 46,
+    "end_s": 58,
+    "title": "Voice has a place here, too",
+    "caption": "The voice module measures signal activity, pauses and pitch. It does not diagnose Parkinson\u2019s or automatically transcribe speech."
+  },
+  {
+    "start_s": 58,
+    "end_s": 68,
+    "title": "Results that can be reviewed",
+    "caption": "Reports bring measurements and limitations together, with clinician review still required."
+  },
+  {
+    "start_s": 68,
+    "end_s": 78,
+    "title": "Show the checks. And the gaps.",
+    "caption": "The archived suite passed 463 tests. Wrong-task checks also exposed an important limitation that still needs work."
+  },
+  {
+    "start_s": 78,
+    "end_s": 86,
+    "title": "The next step is validation",
+    "caption": "The next phase is independent measurement validation, patient usability testing and supervised clinic evaluation."
+  },
+  {
+    "start_s": 86,
+    "end_s": 92,
+    "title": "Built with evidence in view",
+    "caption": "Demo visuals are derived from cited research recordings. No clinical accuracy or treatment claim is made."
+  }
+]

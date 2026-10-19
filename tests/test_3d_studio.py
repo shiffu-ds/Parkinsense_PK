@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from collections import Counter
 import json
 
 import numpy as np
 import pytest
 
-from app.components.pose_3d_viewer import build_motion_figure, build_motion_html
+from app.components.pose_3d_viewer import _Mesh, build_motion_figure, build_motion_html
 from ml.vision.pipeline import LandmarkRecorder
 from ml.vision.spatial import motion_frame_summary, prepare_motion, world_coordinates
 
@@ -145,6 +146,73 @@ def test_recording_gaps_remain_broken_after_downsampling():
     assert np.any(motion.breaks[1:, 8])
     assert motion_frame_summary(result)["model_local"] is True
     assert "not its route through the room" in motion_frame_summary(result)["note"]
+
+
+@pytest.mark.parametrize("speed", [0.5, 1.0, 2.0])
+def test_irregular_timing_is_preserved_when_starting_scrubbing_and_resuming(speed):
+    result = hand_result(4)
+    timestamps = [1.0, 1.07, 1.22, 1.48]
+    for frame, timestamp in zip(result["landmark_frames"], timestamps):
+        frame["timestamp_s"] = timestamp
+    figure = build_motion_figure(result, playback_speed=speed)
+    expected = np.diff(timestamps) * 1000 / speed
+    initial = figure.layout.updatemenus[0].buttons[0].args
+    assert list(initial[0]) == ["0", "1", "2", "3"]
+    assert [item["duration"] for item in initial[1]["frame"]] == pytest.approx([*expected, 0])
+    assert initial[1]["fromcurrent"] is False
+    # Selecting the second observation installs an aligned continuation queue;
+    # the 70 ms first interval must not be reused as the 150 ms next interval.
+    continuation = figure.frames[1].layout.updatemenus[0].buttons[0].args
+    assert list(continuation[0]) == ["1", "2", "3"]
+    assert [item["duration"] for item in continuation[1]["frame"]] == pytest.approx([*expected[1:], 0])
+    assert sum(item["duration"] for item in continuation[1]["frame"]) == pytest.approx((timestamps[-1] - timestamps[1]) * 1000 / speed)
+    assert figure.frames[-1].layout.updatemenus[0].buttons[0].label.startswith("↺ Replay")
+    assert list(figure.frames[-1].layout.updatemenus[0].buttons[0].args[0]) == ["0", "1", "2", "3"]
+    assert figure.layout.sliders[0].steps[0].label == "1.0s"
+    assert figure.layout.meta["timing"] == "Recorded intervals"
+
+
+def test_tracking_gap_labels_last_observation_and_never_connects_a_trail():
+    result = hand_result(4)
+    for frame, timestamp in zip(result["landmark_frames"], [0, 0.1, 1.4, 1.5]):
+        frame["timestamp_s"] = timestamp
+    result["landmark_frames"][0]["world_landmarks"][8][3] = 0.1
+    figure = build_motion_figure(result)
+    assert "20 / 21 joints observed" in figure.layout.annotations[0].text
+    assert "tracking interrupted" in figure.frames[1].layout.annotations[0].text
+    assert "Last observed pose" in figure.frames[1].layout.annotations[0].text
+    assert "tracking interrupted" not in figure.frames[2].layout.annotations[0].text
+    assert None in figure.frames[2].data[-1].x
+    assert figure.frames[1].layout.updatemenus[0].buttons[0].args[1]["frame"][0]["duration"] == 1300
+
+
+def test_solid_bones_are_closed_tapered_and_keep_observed_endpoints():
+    mesh = _Mesh()
+    start, end = np.asarray([0.1, 0.2, 0.3]), np.asarray([0.1, 0.6, 0.3])
+    mesh.tube(start, end, 0.02, taper=0.75)
+    vertices = np.asarray(mesh.vertices)
+    assert vertices[:8].mean(axis=0) == pytest.approx(start)
+    assert vertices[8:16].mean(axis=0) == pytest.approx(end)
+    assert vertices[-2:] == pytest.approx(np.asarray([start, end]))
+    assert np.mean(np.linalg.norm(vertices[8:16] - end, axis=1)) == pytest.approx(0.015, abs=1e-5)
+    # Every mesh edge belongs to two faces, including the formerly open ends.
+    edges = Counter(tuple(sorted(edge)) for a, b, c in mesh.faces for edge in ((a, b), (b, c), (c, a)))
+    assert set(edges.values()) == {2}
+    old_vertices = len(mesh.vertices)
+    mesh.tube(start, start, 0.02)
+    assert len(mesh.vertices) == old_vertices
+
+
+def test_scale_reference_uses_world_units_without_changing_recorded_geometry():
+    result = hand_result(3)
+    before = deepcopy(result)
+    figure = build_motion_figure(result)
+    scale = next(trace for trace in figure.data if trace.name == "Model scale reference")
+    measured = np.linalg.norm(np.diff(np.asarray([scale.x, scale.y, scale.z]), axis=1))
+    assert measured == pytest.approx(0.05)
+    assert "5 cm" in scale.text[-1]
+    assert "estimated scale" in scale.text[-1]
+    assert result == before
 
 
 def test_snapshot_opt_in_copy_is_detached_and_does_not_contain_video(tmp_path, monkeypatch):

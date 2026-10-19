@@ -1,0 +1,17 @@
+{
+  "file": "ParkinSense-PK-Testing-Demo.mp4",
+  "duration_seconds": 92.0,
+  "width": 1080,
+  "height": 1350,
+  "fps": "24/1",
+  "frames": 2208,
+  "codec": "h264",
+  "pixel_format": "yuv420p",
+  "bytes": 2921122,
+  "sha256": "b34682b7ce07b6f8fd2c342f1b121cccd98587b8d651f2eadacd1d3a96b024d3",
+  "full_decode_passed": true,
+  "sampled_scene_frames": 9,
+  "silent": true,
+  "note": "Edited output visualization; not a live screen recording. Full suite figure is historical; three media examples were rerun.",
+  "decoded_scene_contact_sheet_visually_reviewed": true
+}

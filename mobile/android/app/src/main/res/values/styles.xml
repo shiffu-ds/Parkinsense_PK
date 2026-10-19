@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ParkinSense.Base" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#09111C</item>
+        <item name="android:navigationBarColor">#09111C</item>
+        <item name="android:windowBackground">#09111C</item>
+        <item name="android:colorBackground">#09111C</item>
+        <item name="android:colorAccent">#54D9C8</item>
+        <item name="android:textColorPrimary">#EBF3F8</item>
+        <item name="android:textColorSecondary">#A2B5C5</item>
+        <item name="android:colorControlNormal">#A2B5C5</item>
+        <item name="android:colorControlActivated">#54D9C8</item>
+        <item name="colorAccent">#54D9C8</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+    <style name="Theme.ParkinSense" parent="Theme.ParkinSense.Base" />
+</resources>

@@ -21,6 +21,10 @@ dependencies = [
   "mediapipe>=0.10.20,<0.11",
   "soundfile>=0.12,<1",
   "librosa>=0.10.2,<0.12",
+  "fastapi>=0.135.1,<0.136",
+  "uvicorn>=0.54,<0.55",
+  "python-multipart>=0.0.22,<0.1",
+  "httpx>=0.28,<0.29",
 ]
 
 [dependency-groups]

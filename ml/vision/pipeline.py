@@ -33,6 +33,11 @@ class CVError(ValueError):
     """An actionable input or model availability error."""
 
 
+def analysis_version(task: str) -> str:
+    """Identify feature semantics for comparisons and disposable demo caches."""
+    return "mediapipe_tasks_gait_proxies_v3" if task == "gait" else "mediapipe_tasks_proxies_v2"
+
+
 def _task(task: str) -> dict:
     if task not in TASKS:
         raise CVError("Select a supported movement task before uploading a video.")
@@ -271,14 +276,21 @@ def analyze_video(path: str | Path, task: str, model_dir: str | Path | None = No
             activity_issues.append("The live recording had frame gaps or too few unique camera frames. Repeat with a stable connection and sufficient frame rate.")
         quality = _quality_summary(metadata, task, frames, sampled, brightness, blur, decoded, fps, activity_issues)
         accepted = quality["decision"] == "ACCEPT"
+        measurement_limitations = []
+        if accepted and task == "gait" and "arm_swing_trunk_lengths_proxy" not in features:
+            measurement_limitations.append(
+                "Arm-swing measurement is unavailable because both arms could not be tracked reliably. "
+                "Keep both shoulders and wrists visible throughout the recording if this measurement is needed."
+            )
         return {
             "status": "completed" if accepted else "repeat", "task": task, "task_label": TASKS[task]["label"], "quality": quality,
             "features": features if accepted else {}, "feature_metadata": feature_metadata if accepted else {}, "curves": curves,
             "landmark_frames": frames, "media_metadata": metadata,
             "capture_metadata": {key: value for key, value in (capture_metadata or {}).items() if key in {"timing_valid", "recording_gap_count", "longest_recording_gap_s", "elapsed_s", "frames_written", "unique_camera_frames", "effective_capture_fps"}},
             "coordinate_system": {"landmarks": "Image-normalized x/right, y/down and relative z/toward camera for smaller values. Hip/wrist-relative depth has no global camera-position origin.", "world_landmarks": "MediaPipe estimated meters around hips/hand center; model estimates only, not calibrated clinical distances.", "viewer": "World XYZ only: x/right, inverted y/up, z/away. Native estimated-meter scale and model-local origin. No image-plane depth fallback or global walking route.", "viewer_source": "world_landmarks", "viewer_units": "estimated_meters", "global_translation_available": False},
-            "analysis_version": "mediapipe_tasks_proxies_v1", "model_provenance": "Google MediaPipe Pose Landmarker Lite / Hand Landmarker; unvalidated task-specific feature extraction",
-            "caveats": ["Single RGB camera landmarks are approximate. These measures are monitoring proxies, not a diagnosis or a validated clinical score.", "Camera distance, view, clothing and lighting affect comparisons. Match setup and task duration to the baseline.", "Left/right classification expects unmirrored input; confirm the anatomical side before saving."] + (["No object detector is configured: grasp contact, target interaction and successful object transfer are not verified."] if task in {"grasp", "object_transfer", "reach"} else []),
+            "analysis_version": analysis_version(task), "model_provenance": "Google MediaPipe Pose Landmarker Lite / Hand Landmarker; unvalidated task-specific feature extraction",
+            "limitations": measurement_limitations,
+            "caveats": ["Single RGB camera landmarks are approximate. These measures are monitoring proxies, not a diagnosis or a validated clinical score.", "Camera distance, view, clothing and lighting affect comparisons. Match setup and task duration to the baseline.", "Left/right classification expects unmirrored input; confirm the anatomical side before saving."] + (["No object detector is configured: grasp contact, target interaction and successful object transfer are not verified."] if task in {"grasp", "object_transfer", "reach"} else []) + measurement_limitations,
         }
     except CVError:
         raise

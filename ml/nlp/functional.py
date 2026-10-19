@@ -74,6 +74,10 @@ def analyze_text(text: str, language: str = "english") -> dict[str, Any]:
     difficulties = [entity["activity"] for entity in entities if entity["status"] == "reported_difficulty"]
     return {
         "status": "accepted", "task": "text", "language": language,
+        # Retain the bounded, user-reviewed source in the authorized module
+        # record so an unfinished visit can be resumed without reconstruction
+        # from truncated keyword excerpts. This text is never an instruction.
+        "reviewed_text": text.strip(),
         "quality": {"accepted": True, "messages": ["Reviewed text analyzed with multilingual keyword rules."],
                     "language_source": "user_selected", "transcript_verified": "user_responsibility"},
         "features": {"reported_difficulty_domain_count": len(difficulties),

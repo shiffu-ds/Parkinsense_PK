@@ -1,4 +1,4 @@
-"""Compare aligned measurements against the first accepted task result."""
+"""Compare aligned measurements against the first compatible accepted result."""
 from __future__ import annotations
 
 from typing import Any
@@ -22,19 +22,21 @@ def compare_to_baseline(current: dict[str, dict[str, Any]], history: list[dict[s
         if not features:
             comparisons[task] = {"status": "unavailable", "changes": [], "reason": "No accepted finite measurements."}
             continue
-        first = next(((assessment, assessment["modules"][task]) for assessment in _ordered(history)
-                      if task in assessment.get("modules", {}) and numeric_features(assessment["modules"][task])), None)
-        if first is None:
+        candidates = [(assessment, assessment["modules"][task]) for assessment in _ordered(history)
+                      if task in assessment.get("modules", {}) and numeric_features(assessment["modules"][task])]
+        if not candidates:
             comparisons[task] = {"status": "baseline_established", "changes": [], "baseline_features": features,
                                  "reason": "This is the first accepted result for this task."}
             continue
-        assessment, baseline = first
-        if (_method(baseline) != _method(result) or baseline.get("task") != result.get("task")
-                or baseline.get("language") != result.get("language")):
+        first = next(((assessment, baseline) for assessment, baseline in candidates
+                      if _method(baseline) == _method(result) and baseline.get("task") == result.get("task")
+                      and baseline.get("language") == result.get("language")), None)
+        if first is None:
             comparisons[task] = {"status": "incompatible_method", "changes": [],
-                                 "baseline_assessment_id": assessment.get("id"),
+                                 "baseline_assessment_id": candidates[0][0].get("id"),
                                  "reason": "Task, language or measurement method changed; direct deltas are unavailable."}
             continue
+        assessment, baseline = first
         reference = numeric_features(baseline)
         changes = [{"feature": name, "baseline": reference[name], "current": value,
                     "delta": value - reference[name],
@@ -46,7 +48,7 @@ def compare_to_baseline(current: dict[str, dict[str, Any]], history: list[dict[s
                              "baseline_assessment_id": assessment.get("id"),
                              "baseline_date": assessment.get("created_at", assessment.get("session_date")),
                              "baseline_features": reference, "changes": changes}
-    return {"modules": comparisons, "method": "first-accepted-task-baseline-1.0",
+    return {"modules": comparisons, "method": "first-compatible-task-baseline-1.1",
             "limitations": ["Differences describe measured changes, not clinical improvement or deterioration.",
                             "Recording environment, task duration and technique affect comparability.",
                             "No statistical confidence interval or change threshold has been validated."]}

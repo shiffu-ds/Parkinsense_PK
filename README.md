@@ -41,6 +41,15 @@ docker compose --env-file .env -f infra/compose.yaml -p parkinsense_pk stop db
 
 The Docker volume persists when the container stops. Keep `.env` safe: its generated database password is needed to reopen that database. Regenerating `.env` does not change a password in an existing database volume.
 
+## Try it first — pehle demo dekhein
+
+1. Open [the local app](http://127.0.0.1:8501) and choose **Try a public demo** on the welcome page. A demo does not need an account.
+2. Select a gait, hand or voice recording and press Play. Its source, context, licence and preparation details are shown below it.
+3. Press **Analyze this recording** once. Wait for the quality result, then scroll to **3D movement replay**. Use **Play**, drag the model to rotate it, or set **Playback speed** to 0.5× for a closer look.
+4. Read any measurement notes and recording guidance. Use **Download demo report** for the printable report; **Prepare demo 3D replay** creates a separate offline replay. Changing the camera, style or playback speed requires preparing that replay again.
+
+Voice displays acoustic statistics instead of a body replay. The demo runs the same local video/audio pipelines used by patient visits, using a fixed catalogue of attributed public examples. It does not create a patient visit or save anything to patient history. The examples show software behaviour; passing recording checks does not establish diagnostic or measurement accuracy. For your own private recording, return to the welcome page and register or sign in, then follow the patient workflow below.
+
 ## Patient workflow
 
 1. Register with monitoring consent, or log in.
@@ -137,3 +146,36 @@ Camera/microphone permission and successful recording on the user's hardware sti
 
 The full implementation decisions and outstanding acceptance criteria are in `docs/roadmap-analysis.md`.
 # Parkinsense_PK
+
+## Android APK
+
+The standalone patient app lives in `mobile/android`. It includes a dark theme,
+Register/Login, personal history and reports, daily check-ins, and native camera
+and microphone Live Checker recording with on-device signal measurements. The
+APK needs Android 8.0 or later. It contains no Research or staff screens.
+
+The installable local preview is generated at
+`artifacts/ParkinSense-PK-preview.apk`. See [Android install and connection
+instructions](docs/mobile-android.md). For login, uploads and saved analysis,
+keep the phone and laptop on the same Wi-Fi and run:
+
+```bash
+PARKINSENSE_MOBILE_HOST=0.0.0.0 uv run python scripts/run_mobile_api.py
+```
+
+The preview server address is `http://192.168.1.11:8767`; update it in the app if
+the laptop's Wi-Fi address changes. Existing patients use their email and
+password; new patients can Register. This gateway shares the application's
+patient accounts and authorized persistence services. Its API contract and
+privacy controls are documented in [Android patient API](docs/android-api.md).
+
+Rebuild and verify the signed preview after installing Android SDK 36,
+build-tools 36.0.0 and JDK 21:
+
+```bash
+bash scripts/build_android_apk.sh
+```
+
+Camera and microphone behavior still needs verification on the intended phone.
+The APK is a local development preview; the laptop server is required for
+account access and saved analysis.

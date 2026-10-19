@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export PATH="$HOME/.local/bin:$PATH"
 cd "$(dirname "$0")/.."
 if [ ! -f .env ]; then
   echo "Set up .env using scripts/setup_local.py before starting the app."
