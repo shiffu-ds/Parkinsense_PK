@@ -1,0 +1,46 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1350
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Caption,Lato,44,&H00FFFFFF,&H00FFFFFF,&H00112222,&H00112222,-1,0,0,0,100,100,0,0,1,1,0,5,95,95,0,1
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:02.48,Caption,,0,0,0,,{\an5\pos(540,1140)}This is ParkinSense P K:
+Dialogue: 0,0:00:02.48,0:00:03.58,Caption,,0,0,0,,{\an5\pos(540,1140)}a research prototype
+Dialogue: 0,0:00:03.58,0:00:08.00,Caption,,0,0,0,,{\an5\pos(540,1140)}for reviewing everyday movement and\Nspeech.
+Dialogue: 0,0:00:08.00,0:00:10.01,Caption,,0,0,0,,{\an5\pos(540,1140)}Six sections bring together
+Dialogue: 0,0:00:10.01,0:00:12.19,Caption,,0,0,0,,{\an5\pos(540,1140)}walking, hands, sit-to-stand,
+Dialogue: 0,0:00:12.19,0:00:13.20,Caption,,0,0,0,,{\an5\pos(540,1140)}reach and grasp,
+Dialogue: 0,0:00:13.20,0:00:18.00,Caption,,0,0,0,,{\an5\pos(540,1140)}voice, and daily activities.
+Dialogue: 0,0:00:18.00,0:00:20.10,Caption,,0,0,0,,{\an5\pos(540,1140)}This walking replay comes from
+Dialogue: 0,0:00:20.10,0:00:22.61,Caption,,0,0,0,,{\an5\pos(540,1140)}a published clinical recording.
+Dialogue: 0,0:00:22.61,0:00:24.40,Caption,,0,0,0,,{\an5\pos(540,1140)}The model tracks body landmarks
+Dialogue: 0,0:00:24.40,0:00:26.43,Caption,,0,0,0,,{\an5\pos(540,1140)}in three dimensions.
+Dialogue: 0,0:00:26.43,0:00:32.00,Caption,,0,0,0,,{\an5\pos(540,1140)}These estimates are not calibrated clinical\Nmeasurements.
+Dialogue: 0,0:00:32.00,0:00:34.83,Caption,,0,0,0,,{\an5\pos(540,1140)}Here, a published finger-tapping recording
+Dialogue: 0,0:00:34.83,0:00:36.85,Caption,,0,0,0,,{\an5\pos(540,1140)}becomes a three-dimensional hand replay
+Dialogue: 0,0:00:36.85,0:00:38.70,Caption,,0,0,0,,{\an5\pos(540,1140)}and movement curve.
+Dialogue: 0,0:00:38.70,0:00:40.30,Caption,,0,0,0,,{\an5\pos(540,1140)}The source does not specify
+Dialogue: 0,0:00:40.30,0:00:46.00,Caption,,0,0,0,,{\an5\pos(540,1140)}the participant’s diagnosis.
+Dialogue: 0,0:00:46.00,0:00:48.94,Caption,,0,0,0,,{\an5\pos(540,1140)}The voice module measures signal activity,
+Dialogue: 0,0:00:48.94,0:00:50.89,Caption,,0,0,0,,{\an5\pos(540,1140)}pauses, and estimated pitch
+Dialogue: 0,0:00:50.89,0:00:52.79,Caption,,0,0,0,,{\an5\pos(540,1140)}from real audio.
+Dialogue: 0,0:00:52.79,0:00:54.60,Caption,,0,0,0,,{\an5\pos(540,1140)}These are acoustic measurements,
+Dialogue: 0,0:00:54.60,0:00:58.00,Caption,,0,0,0,,{\an5\pos(540,1140)}not a Parkinson’s diagnosis.
+Dialogue: 0,0:00:58.00,0:01:00.58,Caption,,0,0,0,,{\an5\pos(540,1140)}The report brings recording quality,
+Dialogue: 0,0:01:00.58,0:01:04.04,Caption,,0,0,0,,{\an5\pos(540,1140)}measurements, and limitations into one\Nview.
+Dialogue: 0,0:01:04.04,0:01:05.34,Caption,,0,0,0,,{\an5\pos(540,1140)}A clinician still needs
+Dialogue: 0,0:01:05.34,0:01:08.00,Caption,,0,0,0,,{\an5\pos(540,1140)}to review the findings.
+Dialogue: 0,0:01:08.00,0:01:09.79,Caption,,0,0,0,,{\an5\pos(540,1140)}The archived suite passed
+Dialogue: 0,0:01:09.79,0:01:12.21,Caption,,0,0,0,,{\an5\pos(540,1140)}four hundred and sixty-three tests.
+Dialogue: 0,0:01:12.21,0:01:14.75,Caption,,0,0,0,,{\an5\pos(540,1140)}Wrong-task checks exposed a limitation:
+Dialogue: 0,0:01:14.75,0:01:18.00,Caption,,0,0,0,,{\an5\pos(540,1140)}human task confirmation is still needed.
+Dialogue: 0,0:01:18.00,0:01:21.10,Caption,,0,0,0,,{\an5\pos(540,1140)}Next come independent measurement\Nvalidation,
+Dialogue: 0,0:01:21.10,0:01:22.81,Caption,,0,0,0,,{\an5\pos(540,1140)}patient usability testing,
+Dialogue: 0,0:01:22.81,0:01:26.00,Caption,,0,0,0,,{\an5\pos(540,1140)}and supervised clinic evaluation.
+Dialogue: 0,0:01:26.00,0:01:28.90,Caption,,0,0,0,,{\an5\pos(540,1140)}Built from research recordings.
+Dialogue: 0,0:01:28.90,0:01:32.00,Caption,,0,0,0,,{\an5\pos(540,1140)}Clinical validation is still ahead.

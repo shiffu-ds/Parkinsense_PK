@@ -1,0 +1,56 @@
+[
+  {
+    "scene": 1,
+    "text": "This is ParkinSense P K: a research prototype for reviewing everyday movement and speech.",
+    "duration": 6.408,
+    "voice": "en-US-AriaNeural"
+  },
+  {
+    "scene": 2,
+    "text": "Six sections bring together walking, hands, sit-to-stand, reach and grasp, voice, and daily activities.",
+    "duration": 7.608,
+    "voice": "en-US-AriaNeural"
+  },
+  {
+    "scene": 3,
+    "text": "This walking replay comes from a published clinical recording. The model tracks body landmarks in three dimensions. These estimates are not calibrated clinical measurements.",
+    "duration": 12.048,
+    "voice": "en-US-AriaNeural"
+  },
+  {
+    "scene": 4,
+    "text": "Here, a published finger-tapping recording becomes a three-dimensional hand replay and movement curve. The source does not specify the participant\u2019s diagnosis.",
+    "duration": 10.536,
+    "voice": "en-US-AriaNeural"
+  },
+  {
+    "scene": 5,
+    "text": "The voice module measures signal activity, pauses, and estimated pitch from real audio. These are acoustic measurements, not a Parkinson\u2019s diagnosis.",
+    "duration": 11.04,
+    "voice": "en-US-AriaNeural"
+  },
+  {
+    "scene": 6,
+    "text": "The report brings recording quality, measurements, and limitations into one view. A clinician still needs to review the findings.",
+    "duration": 9.168,
+    "voice": "en-US-AriaNeural"
+  },
+  {
+    "scene": 7,
+    "text": "The archived suite passed four hundred and sixty-three tests. Wrong-task checks exposed a limitation: human task confirmation is still needed.",
+    "duration": 10.032,
+    "voice": "en-US-AriaNeural"
+  },
+  {
+    "scene": 8,
+    "text": "Next come independent measurement validation, patient usability testing, and supervised clinic evaluation.",
+    "duration": 7.752,
+    "voice": "en-US-AriaNeural"
+  },
+  {
+    "scene": 9,
+    "text": "Built from research recordings. Clinical validation is still ahead.",
+    "duration": 5.544,
+    "voice": "en-US-AriaNeural"
+  }
+]

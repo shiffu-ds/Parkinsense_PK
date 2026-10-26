@@ -1,0 +1,72 @@
+[
+  {
+    "text": "This",
+    "start": 0.1,
+    "duration": 0.275
+  },
+  {
+    "text": "is",
+    "start": 0.3875,
+    "duration": 0.125
+  },
+  {
+    "text": "ParkinSense",
+    "start": 0.525,
+    "duration": 0.7
+  },
+  {
+    "text": "P",
+    "start": 1.2375,
+    "duration": 0.2125
+  },
+  {
+    "text": "K",
+    "start": 1.4625,
+    "duration": 0.3875
+  },
+  {
+    "text": "a",
+    "start": 2.125,
+    "duration": 0.025
+  },
+  {
+    "text": "research",
+    "start": 2.1625,
+    "duration": 0.4625
+  },
+  {
+    "text": "prototype",
+    "start": 2.6375,
+    "duration": 0.575
+  },
+  {
+    "text": "for",
+    "start": 3.225,
+    "duration": 0.15
+  },
+  {
+    "text": "reviewing",
+    "start": 3.3875,
+    "duration": 0.525
+  },
+  {
+    "text": "everyday",
+    "start": 3.925,
+    "duration": 0.425
+  },
+  {
+    "text": "movement",
+    "start": 4.3625,
+    "duration": 0.4375
+  },
+  {
+    "text": "and",
+    "start": 4.8125,
+    "duration": 0.125
+  },
+  {
+    "text": "speech",
+    "start": 4.95,
+    "duration": 0.575
+  }
+]

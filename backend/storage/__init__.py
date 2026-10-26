@@ -5,11 +5,16 @@ from io import BytesIO
 import mimetypes
 import os
 from pathlib import Path, PurePosixPath
+import time
 from uuid import UUID, uuid4
 
 from backend.config import get_settings
 
 EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".wav", ".ogg", ".webm", ".mp3", ".m4a", ".flac"}
+# Live camera clips are written here before analysis. A clip lasts at most 45
+# seconds, so anything untouched for this long belongs to a session that ended
+# without logging out (closed tab, expired session, server restart).
+CAPTURE_MAX_AGE_SECONDS = 12 * 3600
 
 
 def _private_root() -> Path:
@@ -19,6 +24,37 @@ def _private_root() -> Path:
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     root.chmod(0o700)
     return root.resolve()
+
+
+def capture_root() -> Path:
+    """Owner-only directory for in-progress live camera clips."""
+    root = _private_root() / "capture"
+    if root.is_symlink():
+        raise ValueError("Private storage cannot contain symlinks.")
+    root.mkdir(mode=0o700, exist_ok=True)
+    root.chmod(0o700)
+    return root
+
+
+def sweep_stale_captures(max_age_seconds: float = CAPTURE_MAX_AGE_SECONDS, now: float | None = None) -> int:
+    """Delete abandoned live-capture clips; returns how many were removed.
+
+    Only the app's own ``tmp*.avi`` files are considered. An in-use clip is
+    either being written (fresh mtime) or is recreated by the camera writer.
+    """
+    root = capture_root()
+    cutoff = (time.time() if now is None else now) - max_age_seconds
+    removed = 0
+    for path in root.iterdir():
+        if not (path.name.startswith("tmp") and path.suffix == ".avi") or path.is_symlink() or not path.is_file():
+            continue
+        try:
+            if path.stat().st_mtime < cutoff:
+                path.unlink()
+                removed += 1
+        except OSError:
+            continue
+    return removed
 
 
 def resolve_key(storage_key: str) -> Path:

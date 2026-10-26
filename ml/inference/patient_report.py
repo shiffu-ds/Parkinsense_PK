@@ -27,6 +27,8 @@ _TITLES = {
     "voice_vowel": "Sustained vowel", "voice_sentence": "Read sentence",
     "voice_natural": "Natural speech", "voice": "Voice recording",
     "nlp": "Daily-life description", "adl": "Daily activities questionnaire",
+    "spiral_left": "Spiral drawing — left hand", "spiral_right": "Spiral drawing — right hand",
+    "touch_tap_left": "Two-circle tapping — left hand", "touch_tap_right": "Two-circle tapping — right hand",
 }
 
 
@@ -289,17 +291,17 @@ def render_patient_report_html(content: dict, patient_name: str = "", clinician_
     preview_note = '<p class="meta"><strong>Unsaved analysis attempt preview</strong> · This attempt has not entered the saved assessment.</p>' if content.get("report_type") == "attempt_preview" else ""
     assessment_id = _e(content.get("source_assessment_id"))
     return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + _e(title) + '''</title><style>
-        :root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#edf1f1;color:#193234;font:15px/1.6 Arial,Helvetica,sans-serif}
-        main{max-width:1000px;margin:32px auto;background:white;padding:46px 52px;border-top:7px solid #246765}
-        header{border-bottom:1px solid #dbe4e3;padding-bottom:23px}.brand{font-size:13px;font-weight:700;letter-spacing:2px;color:#246765}
+        :root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#F6F7F5;color:#16262A;font:15px/1.6 Arial,Helvetica,sans-serif}
+        main{max-width:1000px;margin:32px auto;background:white;padding:46px 52px;border-top:7px solid #1D6B52}
+        header{border-bottom:1px solid #D5DCD9;padding-bottom:23px}.brand{font-size:13px;font-weight:700;letter-spacing:2px;color:#1D6B52}
         h1{font-size:28px;line-height:1.2;margin:10px 0}h2{font-size:19px;margin:0}h3{font-size:15px;margin:17px 0 5px}
-        .patient{font-size:19px;margin:8px 0}.muted,.source,.limits{color:#536b6d;font-size:12px}.meta{font-size:12px;color:#536b6d;margin:5px 0}
-        .summary{padding:20px 24px;background:#edf5f4;margin:24px 0}.summary p{margin:0 0 8px}section{margin-top:27px;padding-top:24px;border-top:1px solid #dbe4e3}
-        .section-heading{display:flex;gap:20px;align-items:center;justify-content:space-between}.section-heading span{font-size:11px;background:#edf5f4;padding:4px 9px;border-radius:3px}
+        .patient{font-size:19px;margin:8px 0}.muted,.source,.limits{color:#4D5E62;font-size:12px}.meta{font-size:12px;color:#4D5E62;margin:5px 0}
+        .summary{padding:20px 24px;background:#E2EFE9;margin:24px 0}.summary p{margin:0 0 8px}section{margin-top:27px;padding-top:24px;border-top:1px solid #D5DCD9}
+        .section-heading{display:flex;gap:20px;align-items:center;justify-content:space-between}.section-heading span{font-size:11px;background:#E2EFE9;padding:4px 9px;border-radius:3px}
         table{width:100%;border-collapse:collapse;margin:14px 0;font-size:12px}th{text-align:left;color:#315a5b;background:#f2f6f5;font-weight:600}td,th{padding:8px 10px;border-bottom:1px solid #dde6e5;vertical-align:top;overflow-wrap:anywhere}
         td:not(:first-child){font-variant-numeric:tabular-nums}tr{break-inside:avoid}ul,ol{padding-left:24px}li{margin:5px 0}
         .guidance{background:#fff9ed;border-left:3px solid #a47b3d;padding:4px 19px;margin:17px 0;break-inside:avoid}blockquote{margin:12px 0;padding:13px 18px;border-left:3px solid #73a5a2;background:#f4f7f6;white-space:pre-wrap}
-        a{color:#246765;overflow-wrap:anywhere}footer{margin-top:28px;border-top:1px solid #dbe4e3;padding-top:18px;font-size:11px;color:#536b6d}
+        a{color:#1D6B52;overflow-wrap:anywhere}footer{margin-top:28px;border-top:1px solid #D5DCD9;padding-top:18px;font-size:11px;color:#4D5E62}
         @page{size:A4;margin:17mm}@media print{body{background:white;font-size:10pt}main{margin:0;padding:0;max-width:none;border-top-width:4px}h1{font-size:22pt}h2{break-after:avoid}table{font-size:8pt}header,.summary,footer{break-inside:avoid}.guidance{background:#fff}}
         </style></head><body><main><header><div class="brand">PARKINSENSE PK</div><h1>''' + _e(title) + '</h1>' + identity + preview_note + f'<p class="meta">Generated {_e(content.get("generated_at_local"))} · Assessment {_e(content.get("assessment_status"))}</p><p class="meta">Record {assessment_id}</p></header>' \
         + f'<div class="summary"><p>{_e(content.get("patient_summary"))}</p><p class="muted">Available: {_e(", ".join(available) or "none")}. Missing: {_e(", ".join(missing) or "none")}.</p><p class="muted">{_e(content.get("coverage_note"))}</p></div>' \

@@ -15,6 +15,8 @@ import plotly.io as pio
 from ml.vision.spatial import SpatialMotion, motion_frame_summary, prepare_motion
 from ml.vision.tasks import HAND_CONNECTIONS, POSE_CONNECTIONS
 
+from app.components.palette import VIEWPORT
+
 CAMERAS = {
     "Front": {"x": 0, "y": 0.15, "z": -2.2},
     "Side": {"x": 2.2, "y": 0.15, "z": 0},
@@ -22,8 +24,8 @@ CAMERAS = {
     "Isometric": {"x": 1.45, "y": 0.75, "z": -1.65},
 }
 STYLES = ("Solid avatar", "Skeleton")
-LEFT_COLOR, RIGHT_COLOR, CORE_COLOR = "#449c98", "#698db7", "#879caf"
-BASELINE_COLOR = "#b79b71"
+LEFT_COLOR, RIGHT_COLOR, CORE_COLOR = VIEWPORT["left"], VIEWPORT["right"], VIEWPORT["core"]
+BASELINE_COLOR = VIEWPORT["baseline"]
 _BODY_LEFT = {11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31}
 _BODY_RIGHT = {12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32}
 _BODY_CONNECTIONS = POSE_CONNECTIONS + [(15, 17), (15, 19), (15, 21), (16, 18), (16, 20), (16, 22)]
@@ -251,7 +253,7 @@ def _reference_grid(limits):
         coords.extend(([limits[0][0], 0, z], [limits[0][1], 0, z], [None, None, None]))
     values = np.asarray(coords, dtype=object)
     return go.Scatter3d(x=values[:, 0].tolist(), y=values[:, 1].tolist(), z=values[:, 2].tolist(), mode="lines",
-                        line={"color": "#304456", "width": 1}, name="Origin plane · not measured floor",
+                        line={"color": VIEWPORT["grid"], "width": 1}, name="Origin plane · not measured floor",
                         showlegend=False, hoverinfo="skip", opacity=0.45)
 
 
@@ -264,8 +266,8 @@ def _scale_bar(limits, hand):
     end = start + [length, 0, 0]
     return go.Scatter3d(x=[start[0], end[0]], y=[start[1], end[1]], z=[start[2], end[2]],
                         mode="lines+markers+text", text=["", f"{length * 100:g} cm · estimated scale"],
-                        textposition="top right", textfont={"size": 10, "color": "#c3d3df"},
-                        line={"color": "#c3d3df", "width": 5}, marker={"color": "#c3d3df", "size": 2},
+                        textposition="top right", textfont={"size": 10, "color": VIEWPORT["text_strong"]},
+                        line={"color": VIEWPORT["text_strong"], "width": 5}, marker={"color": VIEWPORT["text_strong"], "size": 2},
                         name="Model scale reference", showlegend=False, hoverinfo="name")
 
 
@@ -275,7 +277,7 @@ def _playback_menus(frame_count, durations, n, speed):
     # continuation queue. Scrubbing and pausing preserve the actual timing.
     start = 0 if n == frame_count - 1 else n
     return [{"type": "buttons", "direction": "left", "showactive": False, "x": 0.02,
-             "xanchor": "left", "y": -0.03, "bgcolor": "#263a4b", "bordercolor": "#3a5164", "buttons": [
+             "xanchor": "left", "y": -0.03, "bgcolor": VIEWPORT["panel"], "bordercolor": VIEWPORT["axis"], "buttons": [
                  {"label": f"{'↺ Replay' if n == frame_count - 1 else '▶ Play'} · {speed:g}×", "method": "animate",
                   "args": [[str(index) for index in range(start, frame_count)],
                            {"frame": [{"duration": delay, "redraw": True} for delay in durations[start:]],
@@ -293,15 +295,15 @@ def _tracking_annotation(motion, n):
         label += "<br>Last observed pose · tracking interrupted before next sample"
     return {"text": label, "xref": "paper", "yref": "paper", "x": 0.02, "y": 0.98,
             "xanchor": "left", "yanchor": "top", "showarrow": False, "align": "left",
-            "font": {"size": 11, "color": "#e0bd83" if interrupted else "#afc8d2"},
-            "bgcolor": "rgba(16,27,39,0.88)", "borderpad": 7}
+            "font": {"size": 11, "color": VIEWPORT["attention"] if interrupted else VIEWPORT["text"]},
+            "bgcolor": "rgba(19,32,36,0.9)", "borderpad": 7}
 
 
 def _empty_figure():
     figure = go.Figure()
     figure.add_annotation(text="3D replay is unavailable for this recording.<br>World landmarks are required; repeat the recording with clear visibility.",
-                          showarrow=False, font={"size": 15, "color": "#aabaca"})
-    figure.update_layout(template="plotly_dark", paper_bgcolor="#101b27", plot_bgcolor="#101b27", height=460,
+                          showarrow=False, font={"size": 15, "color": VIEWPORT["text"]})
+    figure.update_layout(template="plotly_dark", paper_bgcolor=VIEWPORT["ground"], plot_bgcolor=VIEWPORT["ground"], height=460,
                          xaxis={"visible": False}, yaxis={"visible": False}, margin={"t": 20, "b": 20})
     return figure
 
@@ -358,17 +360,17 @@ def build_motion_figure(result: dict, baseline: dict | None = None, *, camera: s
     figure.add_trace(_scale_bar(limits, motion.kind == "hand"))
     if show_grid:
         figure.add_trace(_reference_grid(limits))
-    figure.add_trace(go.Scatter3d(x=[0], y=[0], z=[0], mode="markers", marker={"size": 3, "color": "#a5b7c8"},
+    figure.add_trace(go.Scatter3d(x=[0], y=[0], z=[0], mode="markers", marker={"size": 3, "color": VIEWPORT["text"]},
                                  name="Model origin", showlegend=False, hoverinfo="name"))
-    scene = {"bgcolor": "#101b27", "aspectmode": "data", "dragmode": "orbit", "uirevision": f"{camera}-{motion.kind}-{center}",
+    scene = {"bgcolor": VIEWPORT["ground"], "aspectmode": "data", "dragmode": "orbit", "uirevision": f"{camera}-{motion.kind}-{center}",
              "camera": {"eye": CAMERAS.get(camera, CAMERAS["Isometric"]), "up": {"x": 0, "y": 1, "z": 0}, "projection": {"type": "orthographic"}}}
     for n, axis in enumerate(("x", "y", "z")):
         scene[axis + "axis"] = {"title": ("X · right (m)", "Y · up (m)", "Z · depth (estimated m)")[n],
                                 "range": limits[n], "autorange": False, "showgrid": show_grid,
-                                "gridcolor": "#263646", "zerolinecolor": "#536676", "showbackground": False,
-                                "tickfont": {"size": 10, "color": "#98aabd"}, "nticks": 5}
+                                "gridcolor": VIEWPORT["grid"], "zerolinecolor": VIEWPORT["axis"], "showbackground": False,
+                                "tickfont": {"size": 10, "color": VIEWPORT["text"]}, "nticks": 5}
     figure.update_layout(
-        template="plotly_dark", height=680, scene=scene, paper_bgcolor="#101b27", font={"family": "Arial, sans-serif", "color": "#bdcbd8"},
+        template="plotly_dark", height=680, scene=scene, paper_bgcolor=VIEWPORT["ground"], font={"family": "Atkinson Hyperlegible Next, Arial, sans-serif", "color": VIEWPORT["text"]},
         title={"text": "3D hand articulation" if motion.kind == "hand" else "3D body articulation", "font": {"size": 17},
                "x": 0.02, "y": 0.98, "yanchor": "top"},
         margin={"l": 0, "r": 0, "b": 10, "t": 110},
@@ -379,7 +381,7 @@ def build_motion_figure(result: dict, baseline: dict | None = None, *, camera: s
               "timing": "Recorded intervals; gaps above two replay minutes compressed" if timing_compressed else "Recorded intervals",
               "baseline_alignment": "initial origins; unchanged scale; relative time" if baseline_motion else None},
         updatemenus=_playback_menus(len(motion.timestamps), durations, 0, speed),
-        sliders=[{"active": 0, "x": 0.08, "len": 0.88, "pad": {"t": 55}, "currentvalue": {"prefix": "Recording time · ", "font": {"size": 12}}, "bgcolor": "#365569",
+        sliders=[{"active": 0, "x": 0.08, "len": 0.88, "pad": {"t": 55}, "currentvalue": {"prefix": "Recording time · ", "font": {"size": 12}}, "bgcolor": "#2F474D",
                   "steps": [{"label": f"{timestamp:.1f}s", "method": "animate", "args": [[str(n)], {"mode": "immediate", "frame": {"duration": 0, "redraw": True}, "transition": {"duration": 0}}]}
                             for n, timestamp in enumerate(motion.timestamps)]}],
     )
@@ -400,8 +402,8 @@ def build_motion_html(result: dict, baseline: dict | None = None, **options) -> 
     summary = motion_frame_summary(result)
     note = escape(summary["note"])
     return ("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-            "<title>ParkinSense · 3D movement replay</title><style>body{margin:0;background:#101b27;color:#bdcbd8;font:15px Arial,sans-serif}"
-            "header,footer{padding:18px 28px}h1{font-size:20px;margin:0 0 8px}p{line-height:1.6;margin:0}a{color:#63b9af}</style></head><body>"
+            "<title>ParkinSense · 3D movement replay</title><style>body{margin:0;background:#132024;color:#B9C8C6;font:15px Arial,sans-serif}"
+            "header,footer{padding:18px 28px}h1{font-size:20px;margin:0 0 8px}p{line-height:1.6;margin:0}a{color:#6FC3A2}</style></head><body>"
             "<header><h1>ParkinSense · 3D movement replay</h1><p>Estimated model-local XYZ · X right / Y up / Z away. "
             "Drag to rotate; use the time bar to inspect movement.</p></header>" + plot +
             "<footer><p>" + note + "</p><p>The solid mesh is a stylized display around observed joints, not a recovered body surface. "
@@ -421,7 +423,7 @@ def build_joint_chart(result: dict, baseline: dict | None = None) -> go.Figure:
             previous = baseline.get("curves", {})
             if key in previous:
                 figure.add_trace(go.Scatter(x=previous.get("timestamp_s", []), y=previous[key], mode="lines", name="Baseline " + key.replace("_", " "), line={"color": colors[n % len(colors)], "dash": "dash"}, opacity=0.55))
-    figure.update_layout(template="plotly_dark", paper_bgcolor="#101b27", plot_bgcolor="#101b27", height=340,
+    figure.update_layout(template="plotly_dark", paper_bgcolor=VIEWPORT["ground"], plot_bgcolor=VIEWPORT["ground"], height=340,
                          xaxis_title="Recording time (seconds)", yaxis_title="Estimated angle (degrees)" if any("angle_deg" in key for key in preferred) else "Relative movement proxy",
                          margin={"l": 0, "r": 0, "t": 10, "b": 10})
     return figure

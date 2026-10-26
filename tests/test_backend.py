@@ -288,3 +288,53 @@ def test_withdrawn_consent_prevents_further_collection_and_analysis(accounts):
         with pytest.raises(PermissionError, match="consent"):
             action()
     assert svc.get_assessment(patient["id"], assessment["id"])["modules"] == {}
+
+
+def test_visit_lists_leave_landmark_frames_in_the_database(accounts):
+    _, patient, *_ = accounts
+    visit = svc.create_assessment(patient["id"])
+    frames = [{"timestamp_s": n / 10, "landmarks": [[0.1, 0.2, 0.0, 0.9]] * 33} for n in range(20)]
+    movement = {"status": "completed", "task": "gait", "quality": {"accepted": True, "decision": "ACCEPT"},
+                "features": {"cadence_steps_per_min": 98.5}, "landmark_frames": frames}
+    svc.save_module(patient["id"], visit["id"], "gait", movement)
+    svc.save_module(patient["id"], visit["id"], "adl", {"status": "accepted", "quality": {"accepted": True}, "features": {"total": 3}})
+
+    listed = svc.list_assessments(patient["id"])[0]["modules"]
+    assert "landmark_frames" not in listed["gait"]
+    assert listed["gait"][svc.FRAMES_OMITTED] is True
+    assert listed["gait"]["features"] == {"cadence_steps_per_min": 98.5}
+    assert svc.FRAMES_OMITTED not in listed["adl"] and listed["adl"]["features"] == {"total": 3}
+    assert svc.get_timeline(patient["id"])[0]["modules"]["gait"][svc.FRAMES_OMITTED] is True
+
+    full = svc.get_assessment(patient["id"], visit["id"])["modules"]["gait"]
+    assert full["landmark_frames"] == frames and svc.FRAMES_OMITTED not in full
+    assert svc.list_assessments(patient["id"], frames=True)[0]["modules"]["gait"]["landmark_frames"] == frames
+
+
+def test_repeated_wrong_passwords_pause_sign_in_for_that_email_only(accounts, monkeypatch):
+    from backend.db.models import AuditLog
+    from backend.db.production_models import LoginFailure
+    _, patient, other, _ = accounts
+    for _ in range(svc.LOGIN_FAILURE_LIMIT):
+        with pytest.raises(PermissionError, match="incorrect"):
+            svc.authenticate("patient@example.test", "a wrong password")
+    # Even the right password waits, and the check costs no password hashing.
+    with pytest.raises(PermissionError, match="Too many"):
+        svc.authenticate(" PATIENT@example.test ", PASSWORD)
+    assert svc.authenticate("other@example.test", PASSWORD)["id"] == other["id"]
+    # Unknown emails get the same answer, so the pause reveals nothing about accounts.
+    for _ in range(svc.LOGIN_FAILURE_LIMIT):
+        with pytest.raises(PermissionError, match="incorrect"):
+            svc.authenticate("nobody@example.test", "a wrong password")
+    with pytest.raises(PermissionError, match="Too many"):
+        svc.authenticate("nobody@example.test", "a wrong password")
+    with transaction() as session:
+        stored = session.scalars(select(LoginFailure.limiter_hash)).all()
+        assert stored and not any("@" in value for value in stored)
+        assert session.scalar(select(func.count(AuditLog.id)).where(AuditLog.action == "auth.login_throttled")) == 2
+    later = utc_now() + svc.LOGIN_FAILURE_WINDOW + svc.LOGIN_FAILURE_WINDOW / 15
+    monkeypatch.setattr(svc, "utc_now", lambda: later)
+    assert svc.authenticate("patient@example.test", PASSWORD)["id"] == patient["id"]
+    with transaction() as session:
+        key = svc.login_limiter_hash("patient@example.test")
+        assert session.scalar(select(func.count(LoginFailure.id)).where(LoginFailure.limiter_hash == key)) == 0

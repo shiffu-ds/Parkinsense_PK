@@ -1,0 +1,63 @@
+{
+  "file": "ParkinSense-PK-Voice-Captions.mp4",
+  "duration_seconds": 92.0,
+  "audio_codec": "aac",
+  "sample_rate": 48000,
+  "audio_duration_seconds": 92.0,
+  "video_codec": "h264",
+  "frames": 2208,
+  "full_decode_passed": true,
+  "speech_signal_present_in_all_nine_scenes": true,
+  "burned_caption_pixels_present_in_all_nine_samples": true,
+  "audio_per_scene": [
+    {
+      "scene": "Movement deserves",
+      "rms_dbfs": -18.23,
+      "active_sample_fraction": 0.557
+    },
+    {
+      "scene": "Six assessment sections",
+      "rms_dbfs": -18.74,
+      "active_sample_fraction": 0.516
+    },
+    {
+      "scene": "Walking, in three dimensions",
+      "rms_dbfs": -18.09,
+      "active_sample_fraction": 0.558
+    },
+    {
+      "scene": "Small movements. Visible patterns.",
+      "rms_dbfs": -18.45,
+      "active_sample_fraction": 0.516
+    },
+    {
+      "scene": "Voice has a place here, too",
+      "rms_dbfs": -17.54,
+      "active_sample_fraction": 0.628
+    },
+    {
+      "scene": "Results that can be reviewed",
+      "rms_dbfs": -17.59,
+      "active_sample_fraction": 0.62
+    },
+    {
+      "scene": "Show the checks. And the gaps.",
+      "rms_dbfs": -18.06,
+      "active_sample_fraction": 0.605
+    },
+    {
+      "scene": "The next step is validation",
+      "rms_dbfs": -18.33,
+      "active_sample_fraction": 0.657
+    },
+    {
+      "scene": "Built with evidence in view",
+      "rms_dbfs": -18.8,
+      "active_sample_fraction": 0.496
+    }
+  ],
+  "sha256": "0d7353b6a7f7d1a3c4d6ee278ddab890925c91119c32dc7dc752f2762c1f3fbd",
+  "bytes": 4809505,
+  "decoded_caption_layout_visually_reviewed": true,
+  "continuous_caption_phrases": 35
+}

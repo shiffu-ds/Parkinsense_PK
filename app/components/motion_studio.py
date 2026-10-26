@@ -51,7 +51,7 @@ def movement_studio(result, *, baseline=None, identity="recording", export_conte
                "show_trails": trails, "trail_joint": selected_joint,
                "show_grid": grid, "smooth": smooth}
     previous = baseline if compare else None
-    st.plotly_chart(build_motion_figure(result, previous, **options), width="stretch", key=f"studio_{token}", config={"displaylogo": False, "scrollZoom": True})
+    st.plotly_chart(build_motion_figure(result, previous, **options), width="stretch", theme=None, key=f"studio_{token}", config={"displaylogo": False, "scrollZoom": True})
     st.caption(summary["note"])
     st.caption("Depth and meter scale are model estimates from a single camera. The solid shape is a visual aid around detected joints; it is not a scanned body surface.")
     with st.expander("Take this replay to your review"):

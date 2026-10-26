@@ -53,14 +53,15 @@ def test_checkin_requires_explicit_answers_and_preserves_unknown_falls(care_acco
     patient, _ = care_accounts
     app = _patient_panel(patient)
     assert not app.exception
-    assert len(app.selectbox) == 5
-    assert all(item.value is None for item in app.selectbox)
+    checkin = [item for item in app.selectbox if item.key.startswith("checkin_") and not item.key.endswith("_helper")]
+    assert len(checkin) == 5  # Four ratings and falls; the medicine diary tab has its own.
+    assert all(item.value is None for item in checkin)
     _button(app, "Save daily check-in").click().run()
     assert not app.exception
     assert app.error
     assert care.list_checkins(patient["id"]) == []
     for item in app.selectbox:
-        if not item.label.startswith("Any falls"):
+        if item.key.startswith("checkin_") and not item.key.endswith("_helper") and not item.label.startswith("Any falls"):
             item.set_value(0)
     next(item for item in app.text_area if item.label == "Anything you'd like your care team to know?").set_value("I would like to discuss getting dressed.")
     _button(app, "Save daily check-in").click().run()
@@ -123,3 +124,16 @@ def test_dynamic_design_text_is_html_escaped(monkeypatch):
     assert all("<script>" not in value for value in output)
     assert all("&lt;script&gt;" in value for value in output)
     assert "onclick" not in output[1]
+
+
+def test_peoples_words_are_shown_as_typed_not_as_markdown():
+    # Browser check (25 Oct): the note renders verbatim, loads no image and any
+    # remaining link is a bare address shown as itself.
+    import re
+    from app.components.design import plain_text
+    note = "![tracker](http://example.test/p.png) [call me](javascript:alert(1)) **loud** :red[alarm] $x$ <b>hi</b>"
+    escaped = plain_text(note)
+    assert not re.search(r"(?<!\\)[\[\]()!*:$<>]", escaped)
+    assert re.sub(r"\\(.)", r"\1", escaped) == note
+    assert plain_text("آج چلنا آسان لگا") == "آج چلنا آسان لگا"
+    assert plain_text(None) == ""

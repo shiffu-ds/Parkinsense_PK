@@ -4,14 +4,15 @@ The actor_id must come from the authenticated server-side session. Every patient
 resource is checked independently; role-aware navigation alone is insufficient.
 """
 
-from datetime import timezone
+from datetime import timedelta, timezone
+import hashlib
 import json
 import math
 import re
 from threading import RLock
 from uuid import UUID
 
-from sqlalchemy import delete, func, select, text
+from sqlalchemy import JSON, cast, delete, func, literal_column, select, text, type_coerce
 from sqlalchemy.exc import IntegrityError
 
 from backend.db import configure_db as configure_db, get_engine as get_engine, init_db as init_db, transaction
@@ -28,6 +29,7 @@ MODULES = {
     "gait", "walking", "turning", "hand", "hand_left", "hand_right", "finger_left", "finger_right",
     "finger_tapping", "finger_tapping_left", "finger_tapping_right", "hand_open_close", "open_close",
     "sit_to_stand", "reach_grasp", "reach", "grasp", "object_transfer", "voice", "voice_vowel", "voice_sentence", "voice_natural", "speech", "audio", "nlp", "adl",
+    "spiral_left", "spiral_right", "touch_tap_left", "touch_tap_right",
 }
 _bootstrap_lock = RLock()
 
@@ -133,19 +135,46 @@ def _assessment_access(session, actor_id, assessment_id, *, draft=False, lock=Fa
     return actor, record
 
 
-def _assessment_dict(session, record: Assessment) -> dict:
-    results = session.scalars(select(ModuleResult).where(ModuleResult.assessment_id == record.id)).all()
+# Per-frame landmarks are ~98% of a movement result (about 0.5 MB each). Visit
+# lists leave them in the database; get_assessment() returns them for replay.
+FRAMES_OMITTED = "landmark_frames_omitted"
+
+
+def _results_without_frames(session):
+    """Result JSON minus landmark_frames, and whether frames existed, computed in SQL."""
+    if session.get_bind().dialect.name == "postgresql":
+        from sqlalchemy.dialects.postgresql import JSONB
+        value = cast(ModuleResult.result, JSONB)
+        return type_coerce(value.op("-")(literal_column("'landmark_frames'")), JSONB), value.has_key("landmark_frames")
+    return (type_coerce(func.json_remove(ModuleResult.result, "$.landmark_frames"), JSON),
+            func.json_type(ModuleResult.result, "$.landmark_frames").is_not(None))
+
+
+def _module_rows(session, assessment_id, frames: bool):
+    """(module, result, revision, file_id) for one assessment."""
+    where = ModuleResult.assessment_id == assessment_id
+    if frames:
+        return [(row.module, row.result, row.revision, row.file_id)
+                for row in session.scalars(select(ModuleResult).where(where)).all()]
+    result, had_frames = _results_without_frames(session)
+    rows = session.execute(select(ModuleResult.module, result, ModuleResult.revision, ModuleResult.file_id, had_frames).where(where))
+    return [(module, {**value, FRAMES_OMITTED: True} if omitted else value, revision, file_id)
+            for module, value, revision, file_id, omitted in rows]
+
+
+def _assessment_dict(session, record: Assessment, *, frames: bool = True) -> dict:
+    results = _module_rows(session, record.id, frames)
     files = session.scalars(select(AssessmentFile).where(AssessmentFile.assessment_id == record.id).order_by(AssessmentFile.created_at)).all()
     reports = session.scalars(select(Report).where(Report.assessment_id == record.id).order_by(Report.created_at)).all()
     measurements = session.scalars(select(ClinicalMeasurement).where(ClinicalMeasurement.assessment_id == record.id).order_by(ClinicalMeasurement.name)).all()
-    revisions = {row.module: row.revision for row in results}
+    revisions = {module: revision for module, _, revision, _ in results}
     return {"id": record.id, "patient_id": record.patient_id, "status": record.status,
             "created_at": _iso(record.created_at), "updated_at": _iso(record.updated_at), "completed_at": _iso(record.completed_at),
             "review_status": record.review_status, "reviewed_at": _iso(record.reviewed_at), "reviewed_by": record.reviewed_by,
             "review_note": record.review_note,
-            "modules": {row.module: row.result for row in results},
+            "modules": {module: result for module, result, _, _ in results},
             "module_revisions": revisions,
-            "module_file_ids": {row.module: row.file_id for row in results},
+            "module_file_ids": {module: file_id for module, _, _, file_id in results},
             "files": [{"id": row.id, "module": row.module, "storage_key": row.storage_key,
                        "mime_type": row.mime_type, "size_bytes": row.size_bytes, "created_at": _iso(row.created_at)} for row in files],
             "reports": [_report_dict(row, revisions) for row in reports],
@@ -190,22 +219,51 @@ def register_patient(full_name, email, password, language="English", consent=Fal
         raise ValueError("An account with this email already exists.") from exc
 
 
-def authenticate(email, password) -> dict:
+LOGIN_FAILURE_LIMIT = 5
+LOGIN_FAILURE_WINDOW = timedelta(minutes=15)
+LOGIN_THROTTLED = ("Too many unsuccessful sign-in attempts for this email. Wait 15 minutes and try again, "
+                   "or ask your administrator for a recovery code.")
+
+
+def login_limiter_hash(email: str) -> str:
+    """Throttle key for one typed email; the email itself is never stored."""
     normalized = email.strip().lower() if isinstance(email, str) else ""
+    return hashlib.sha256(f"login:{normalized}".encode("utf-8")).hexdigest()
+
+
+def authenticate(email, password) -> dict:
+    from backend.db.production_models import AccountSecurity, LoginFailure
+    normalized = email.strip().lower() if isinstance(email, str) else ""
+    limiter_hash = login_limiter_hash(normalized)
+    throttled, result = False, None
     with transaction() as session:
-        # Password reset locks this same row. Capture the session revision in
-        # the successful password-check transaction, never in a later read.
-        user = session.scalar(select(User).where(User.email == normalized).with_for_update())
-        valid = verify_password(password, user.password_hash if user else DUMMY_PASSWORD_HASH)
-        if user and user.active and valid:
-            _audit(session, user.id, "auth.login", "user", user.id)
-            result = _user_dict(session, user)
-            from backend.db.production_models import AccountSecurity
-            security = session.get(AccountSecurity, user.id)
-            result["_auth_revision"] = security.session_revision if security else 0
+        if session.get_bind().dialect.name == "postgresql":
+            # Serialize attempts for one email across app and mobile workers.
+            session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": int(limiter_hash[:15], 16)})
+        since = utc_now() - LOGIN_FAILURE_WINDOW
+        failures = session.scalar(select(func.count(LoginFailure.id)).where(
+            LoginFailure.limiter_hash == limiter_hash, LoginFailure.created_at > since))
+        if failures >= LOGIN_FAILURE_LIMIT:
+            # Same answer for known and unknown emails, and no password check is spent.
+            _audit(session, None, "auth.login_throttled")
+            throttled = True
         else:
-            _audit(session, None, "auth.login_failed")
-            result = None
+            # Password reset locks this same row. Capture the session revision in
+            # the successful password-check transaction, never in a later read.
+            user = session.scalar(select(User).where(User.email == normalized).with_for_update())
+            valid = verify_password(password, user.password_hash if user else DUMMY_PASSWORD_HASH)
+            if user and user.active and valid:
+                session.execute(delete(LoginFailure).where(LoginFailure.limiter_hash == limiter_hash))
+                _audit(session, user.id, "auth.login", "user", user.id)
+                result = _user_dict(session, user)
+                security = session.get(AccountSecurity, user.id)
+                result["_auth_revision"] = security.session_revision if security else 0
+            else:
+                session.execute(delete(LoginFailure).where(LoginFailure.created_at <= since))
+                session.add(LoginFailure(limiter_hash=limiter_hash))
+                _audit(session, None, "auth.login_failed")
+    if throttled:
+        raise PermissionError(LOGIN_THROTTLED)
     if result is None:
         raise PermissionError("Email or password is incorrect, or the account is inactive.")
     return result
@@ -344,13 +402,14 @@ def create_assessment(actor_id, patient_id=None) -> dict:
         return _assessment_dict(session, record)
 
 
-def list_assessments(actor_id, patient_id=None) -> list[dict]:
+def list_assessments(actor_id, patient_id=None, *, frames: bool = False) -> list[dict]:
+    """Newest first. Movement results omit landmark_frames unless frames=True."""
     with transaction() as session:
         actor = _actor(session, actor_id)
         patient = _patient_access(session, actor, patient_id)
         rows = session.scalars(select(Assessment).where(Assessment.patient_id == patient.id).order_by(Assessment.created_at.desc())).all()
         _audit(session, actor.id, "assessments.listed", "patient", patient.id, count=len(rows))
-        return [_assessment_dict(session, record) for record in rows]
+        return [_assessment_dict(session, record, frames=frames) for record in rows]
 
 
 def get_timeline(actor_id, patient_id=None) -> list[dict]:

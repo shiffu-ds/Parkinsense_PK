@@ -16,6 +16,7 @@ from typing import Any
 import numpy as np
 
 MOVEMENT_TASKS = frozenset({"gait", "turning", "finger_left", "finger_right", "hand_open_close", "sit_to_stand", "reach", "grasp", "object_transfer"})
+TOUCH_TASKS = frozenset({"spiral_left", "spiral_right", "touch_tap_left", "touch_tap_right"})
 AUDIO_TASKS = frozenset({"voice", "voice_natural", "voice_vowel", "voice_sentence", "audio_natural", "audio_vowel", "audio_sentence"})
 MAX_DISPLAY_POINTS = 300
 
@@ -68,6 +69,8 @@ def safe_label(value: Any, *, limit: int = 110) -> str:
 def module_family(task: str) -> str | None:
     if task in MOVEMENT_TASKS:
         return "movement"
+    if task in TOUCH_TASKS:
+        return "touch"
     if task in AUDIO_TASKS:
         return "audio"
     if task in {"nlp", "text"}:
@@ -83,6 +86,7 @@ def source_note(task: str) -> str:
         "audio": "Local WAV measurements. Microphone, room and task affect comparisons; no clinical voice score is inferred.",
         "nlp": "Keyword-rule matches in patient self-report. A value of 0 means no matched difficulty phrase, not confirmed absence of difficulty.",
         "adl": "Patient self-report on a custom, unvalidated 0–4 difficulty scale. These ratings do not estimate disease severity.",
+        "touch": "Touchscreen measurements. Screen size, finger or stylus and the hand used affect comparisons; these are not clinical scores.",
     }.get(module_family(task), "No measurement definition is available for this module.")
 
 
@@ -111,6 +115,11 @@ def measurement_definition(result: dict, name: str, task: str) -> dict[str, str]
             if domain in DOMAINS:
                 unit, label = "rule match (0 or 1)", domain.replace("_", " ").capitalize()
         source = "Keyword rules · patient self-report"
+    elif family == "touch":
+        from ml.touch import DEFINITIONS
+        if name in DEFINITIONS:
+            label, unit = DEFINITIONS[name]
+        source = "Touchscreen measurement"
     elif family == "adl":
         from ml.tabular.adl import ADL_ITEMS
         if name == "adl_self_report_mean":

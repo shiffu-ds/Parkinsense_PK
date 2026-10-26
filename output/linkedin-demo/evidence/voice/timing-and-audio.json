@@ -1,0 +1,353 @@
+{
+  "audio": [
+    {
+      "scene": 1,
+      "duration_s": 6.386666666666667,
+      "speed": 1,
+      "rms": 2639.840448402625,
+      "nonzero_samples": 261715
+    },
+    {
+      "scene": 2,
+      "duration_s": 7.586666666666667,
+      "speed": 1,
+      "rms": 2617.8717666019043,
+      "nonzero_samples": 316166
+    },
+    {
+      "scene": 3,
+      "duration_s": 12.026666666666667,
+      "speed": 1,
+      "rms": 2673.736619481656,
+      "nonzero_samples": 447738
+    },
+    {
+      "scene": 4,
+      "duration_s": 10.514666666666667,
+      "speed": 1,
+      "rms": 2737.175379085592,
+      "nonzero_samples": 418749
+    },
+    {
+      "scene": 5,
+      "duration_s": 11.018666666666666,
+      "speed": 1,
+      "rms": 2776.5193673109375,
+      "nonzero_samples": 443194
+    },
+    {
+      "scene": 6,
+      "duration_s": 9.146666666666667,
+      "speed": 1,
+      "rms": 2817.771650150125,
+      "nonzero_samples": 357642
+    },
+    {
+      "scene": 7,
+      "duration_s": 9.28025,
+      "speed": 1.0787096774193548,
+      "rms": 2741.1230879474488,
+      "nonzero_samples": 368162
+    },
+    {
+      "scene": 8,
+      "duration_s": 7.2802291666666665,
+      "speed": 1.061917808219178,
+      "rms": 2521.3571639283605,
+      "nonzero_samples": 305183
+    },
+    {
+      "scene": 9,
+      "duration_s": 5.2800625,
+      "speed": 1.0460377358490565,
+      "rms": 2555.571852528587,
+      "nonzero_samples": 171087
+    }
+  ],
+  "captions": [
+    {
+      "start": 0,
+      "end": 2.475,
+      "text": "This is ParkinSense P K:",
+      "lines": [
+        "This is ParkinSense P K:"
+      ]
+    },
+    {
+      "start": 2.475,
+      "end": 3.575,
+      "text": "a research prototype",
+      "lines": [
+        "a research prototype"
+      ]
+    },
+    {
+      "start": 3.575,
+      "end": 8,
+      "text": "for reviewing everyday movement and speech.",
+      "lines": [
+        "for reviewing everyday movement and",
+        "speech."
+      ]
+    },
+    {
+      "start": 8,
+      "end": 10.0125,
+      "text": "Six sections bring together",
+      "lines": [
+        "Six sections bring together"
+      ]
+    },
+    {
+      "start": 10.0125,
+      "end": 12.1875,
+      "text": "walking, hands, sit-to-stand,",
+      "lines": [
+        "walking, hands, sit-to-stand,"
+      ]
+    },
+    {
+      "start": 12.1875,
+      "end": 13.2,
+      "text": "reach and grasp,",
+      "lines": [
+        "reach and grasp,"
+      ]
+    },
+    {
+      "start": 13.2,
+      "end": 18,
+      "text": "voice, and daily activities.",
+      "lines": [
+        "voice, and daily activities."
+      ]
+    },
+    {
+      "start": 18,
+      "end": 20.1,
+      "text": "This walking replay comes from",
+      "lines": [
+        "This walking replay comes from"
+      ]
+    },
+    {
+      "start": 20.1,
+      "end": 22.6125,
+      "text": "a published clinical recording.",
+      "lines": [
+        "a published clinical recording."
+      ]
+    },
+    {
+      "start": 22.6125,
+      "end": 24.400000000000002,
+      "text": "The model tracks body landmarks",
+      "lines": [
+        "The model tracks body landmarks"
+      ]
+    },
+    {
+      "start": 24.400000000000002,
+      "end": 26.425,
+      "text": "in three dimensions.",
+      "lines": [
+        "in three dimensions."
+      ]
+    },
+    {
+      "start": 26.425,
+      "end": 32,
+      "text": "These estimates are not calibrated clinical measurements.",
+      "lines": [
+        "These estimates are not calibrated clinical",
+        "measurements."
+      ]
+    },
+    {
+      "start": 32,
+      "end": 34.825,
+      "text": "Here, a published finger-tapping recording",
+      "lines": [
+        "Here, a published finger-tapping recording"
+      ]
+    },
+    {
+      "start": 34.825,
+      "end": 36.85,
+      "text": "becomes a three-dimensional hand replay",
+      "lines": [
+        "becomes a three-dimensional hand replay"
+      ]
+    },
+    {
+      "start": 36.85,
+      "end": 38.7,
+      "text": "and movement curve.",
+      "lines": [
+        "and movement curve."
+      ]
+    },
+    {
+      "start": 38.7,
+      "end": 40.300000000000004,
+      "text": "The source does not specify",
+      "lines": [
+        "The source does not specify"
+      ]
+    },
+    {
+      "start": 40.300000000000004,
+      "end": 46,
+      "text": "the participant\u2019s diagnosis.",
+      "lines": [
+        "the participant\u2019s diagnosis."
+      ]
+    },
+    {
+      "start": 46,
+      "end": 48.9375,
+      "text": "The voice module measures signal activity,",
+      "lines": [
+        "The voice module measures signal activity,"
+      ]
+    },
+    {
+      "start": 48.9375,
+      "end": 50.8875,
+      "text": "pauses, and estimated pitch",
+      "lines": [
+        "pauses, and estimated pitch"
+      ]
+    },
+    {
+      "start": 50.8875,
+      "end": 52.7875,
+      "text": "from real audio.",
+      "lines": [
+        "from real audio."
+      ]
+    },
+    {
+      "start": 52.7875,
+      "end": 54.6,
+      "text": "These are acoustic measurements,",
+      "lines": [
+        "These are acoustic measurements,"
+      ]
+    },
+    {
+      "start": 54.6,
+      "end": 58,
+      "text": "not a Parkinson\u2019s diagnosis.",
+      "lines": [
+        "not a Parkinson\u2019s diagnosis."
+      ]
+    },
+    {
+      "start": 58,
+      "end": 60.575,
+      "text": "The report brings recording quality,",
+      "lines": [
+        "The report brings recording quality,"
+      ]
+    },
+    {
+      "start": 60.575,
+      "end": 64.0375,
+      "text": "measurements, and limitations into one view.",
+      "lines": [
+        "measurements, and limitations into one",
+        "view."
+      ]
+    },
+    {
+      "start": 64.0375,
+      "end": 65.3375,
+      "text": "A clinician still needs",
+      "lines": [
+        "A clinician still needs"
+      ]
+    },
+    {
+      "start": 65.3375,
+      "end": 68,
+      "text": "to review the findings.",
+      "lines": [
+        "to review the findings."
+      ]
+    },
+    {
+      "start": 68,
+      "end": 69.7869019138756,
+      "text": "The archived suite passed",
+      "lines": [
+        "The archived suite passed"
+      ]
+    },
+    {
+      "start": 69.7869019138756,
+      "end": 72.2087769138756,
+      "text": "four hundred and sixty-three tests.",
+      "lines": [
+        "four hundred and sixty-three tests."
+      ]
+    },
+    {
+      "start": 72.2087769138756,
+      "end": 74.74653110047846,
+      "text": "Wrong-task checks exposed a limitation:",
+      "lines": [
+        "Wrong-task checks exposed a limitation:"
+      ]
+    },
+    {
+      "start": 74.74653110047846,
+      "end": 78,
+      "text": "human task confirmation is still needed.",
+      "lines": [
+        "human task confirmation is still needed."
+      ]
+    },
+    {
+      "start": 78,
+      "end": 81.10445046439628,
+      "text": "Next come independent measurement validation,",
+      "lines": [
+        "Next come independent measurement",
+        "validation,"
+      ]
+    },
+    {
+      "start": 81.10445046439628,
+      "end": 82.81126805985552,
+      "text": "patient usability testing,",
+      "lines": [
+        "patient usability testing,"
+      ]
+    },
+    {
+      "start": 82.81126805985552,
+      "end": 86,
+      "text": "and supervised clinic evaluation.",
+      "lines": [
+        "and supervised clinic evaluation."
+      ]
+    },
+    {
+      "start": 86,
+      "end": 88.89531926406926,
+      "text": "Built from research recordings.",
+      "lines": [
+        "Built from research recordings."
+      ]
+    },
+    {
+      "start": 88.89531926406926,
+      "end": 92,
+      "text": "Clinical validation is still ahead.",
+      "lines": [
+        "Clinical validation is still ahead."
+      ]
+    }
+  ]
+}

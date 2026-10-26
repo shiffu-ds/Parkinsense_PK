@@ -1,0 +1,62 @@
+[
+  {
+    "text": "Next",
+    "start": 0.1,
+    "duration": 0.45
+  },
+  {
+    "text": "come",
+    "start": 0.5625,
+    "duration": 0.2375
+  },
+  {
+    "text": "independent",
+    "start": 0.8125,
+    "duration": 0.6375
+  },
+  {
+    "text": "measurement",
+    "start": 1.4625,
+    "duration": 0.4625
+  },
+  {
+    "text": "validation",
+    "start": 1.9375,
+    "duration": 0.7
+  },
+  {
+    "text": "patient",
+    "start": 2.925,
+    "duration": 0.4
+  },
+  {
+    "text": "usability",
+    "start": 3.3375,
+    "duration": 0.6
+  },
+  {
+    "text": "testing",
+    "start": 3.95,
+    "duration": 0.5
+  },
+  {
+    "text": "and",
+    "start": 4.7375,
+    "duration": 0.1375
+  },
+  {
+    "text": "supervised",
+    "start": 4.8875,
+    "duration": 0.7375
+  },
+  {
+    "text": "clinic",
+    "start": 5.6375,
+    "duration": 0.35
+  },
+  {
+    "text": "evaluation",
+    "start": 6.0,
+    "duration": 0.8625
+  }
+]

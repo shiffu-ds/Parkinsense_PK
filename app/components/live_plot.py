@@ -26,7 +26,7 @@ def _live_host():
     return st.components.v2.component(
         "parkinsense_live_3d_host",
         html='<div class="live-graph" role="group" aria-label="Live focused 3D joint tracking"></div>',
-        css='.live-graph { width: 100%; height: 450px; overflow: hidden; border-radius: 12px; background: #101e2c; }',
+        css='.live-graph { width: 100%; height: 450px; overflow: hidden; border-radius: 6px; background: #132024; }',
         js=Path(__file__).with_name("live_plot.js").read_text(),
         isolate_styles=False,
     )

@@ -1,0 +1,143 @@
+1
+00:00:00,000 --> 00:00:02,475
+This is ParkinSense P K:
+
+2
+00:00:02,475 --> 00:00:03,575
+a research prototype
+
+3
+00:00:03,575 --> 00:00:08,000
+for reviewing everyday movement and
+speech.
+
+4
+00:00:08,000 --> 00:00:10,012
+Six sections bring together
+
+5
+00:00:10,012 --> 00:00:12,188
+walking, hands, sit-to-stand,
+
+6
+00:00:12,188 --> 00:00:13,200
+reach and grasp,
+
+7
+00:00:13,200 --> 00:00:18,000
+voice, and daily activities.
+
+8
+00:00:18,000 --> 00:00:20,100
+This walking replay comes from
+
+9
+00:00:20,100 --> 00:00:22,613
+a published clinical recording.
+
+10
+00:00:22,613 --> 00:00:24,400
+The model tracks body landmarks
+
+11
+00:00:24,400 --> 00:00:26,425
+in three dimensions.
+
+12
+00:00:26,425 --> 00:00:32,000
+These estimates are not calibrated clinical
+measurements.
+
+13
+00:00:32,000 --> 00:00:34,825
+Here, a published finger-tapping recording
+
+14
+00:00:34,825 --> 00:00:36,850
+becomes a three-dimensional hand replay
+
+15
+00:00:36,850 --> 00:00:38,700
+and movement curve.
+
+16
+00:00:38,700 --> 00:00:40,300
+The source does not specify
+
+17
+00:00:40,300 --> 00:00:46,000
+the participant’s diagnosis.
+
+18
+00:00:46,000 --> 00:00:48,938
+The voice module measures signal activity,
+
+19
+00:00:48,938 --> 00:00:50,888
+pauses, and estimated pitch
+
+20
+00:00:50,888 --> 00:00:52,788
+from real audio.
+
+21
+00:00:52,788 --> 00:00:54,600
+These are acoustic measurements,
+
+22
+00:00:54,600 --> 00:00:58,000
+not a Parkinson’s diagnosis.
+
+23
+00:00:58,000 --> 00:01:00,575
+The report brings recording quality,
+
+24
+00:01:00,575 --> 00:01:04,037
+measurements, and limitations into one
+view.
+
+25
+00:01:04,037 --> 00:01:05,338
+A clinician still needs
+
+26
+00:01:05,338 --> 00:01:08,000
+to review the findings.
+
+27
+00:01:08,000 --> 00:01:09,787
+The archived suite passed
+
+28
+00:01:09,787 --> 00:01:12,209
+four hundred and sixty-three tests.
+
+29
+00:01:12,209 --> 00:01:14,747
+Wrong-task checks exposed a limitation:
+
+30
+00:01:14,747 --> 00:01:18,000
+human task confirmation is still needed.
+
+31
+00:01:18,000 --> 00:01:21,104
+Next come independent measurement
+validation,
+
+32
+00:01:21,104 --> 00:01:22,811
+patient usability testing,
+
+33
+00:01:22,811 --> 00:01:26,000
+and supervised clinic evaluation.
+
+34
+00:01:26,000 --> 00:01:28,895
+Built from research recordings.
+
+35
+00:01:28,895 --> 00:01:32,000
+Clinical validation is still ahead.

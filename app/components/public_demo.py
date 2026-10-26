@@ -105,7 +105,7 @@ def attribute_demo_html(document: str, clip: dict) -> str:
     license_text = escape(clip.get("license", ""))
     license_note = f'<a href="{escape(license_url, quote=True)}" rel="noopener noreferrer">{license_text}</a>' if license_url else license_text
     excerpt = (f"Source excerpt: {clip['start_seconds']:g}–{clip['end_seconds']:g} seconds. " if "start_seconds" in clip else "")
-    banner = ("<aside style=\"border:2px solid #497c80;padding:20px;margin:20px\">"
+    banner = ("<aside style=\"border:2px solid #1D6B52;padding:20px;margin:20px\">"
               "<h1>Public recording demonstration</h1><p>This is a software demonstration using a published recording. "
               "It is not a patient record, a diagnosis, or an independent validation of measurement accuracy.</p>"
               f"<p><strong>Source:</strong> {source}</p><p>{escape(clip.get('context', ''))}</p>"
@@ -223,7 +223,7 @@ def public_demo_page():
         speed = st.selectbox("Playback speed", [0.25, 0.5, 1.0, 2.0], index=2,
                              format_func=lambda value: f"{value:g}×", key="public_demo_speed")
         options = {"camera": camera, "style": style, "playback_speed": speed, "show_trails": True, "show_grid": True}
-        st.plotly_chart(build_motion_figure(result, **options), width="stretch", key="public_demo_3d", config={"displaylogo": False, "scrollZoom": True})
+        st.plotly_chart(build_motion_figure(result, **options), width="stretch", theme=None, key="public_demo_3d", config={"displaylogo": False, "scrollZoom": True})
         st.caption(summary["note"])
         st.caption("Depth and scale are single-camera model estimates. This view shows tracked joints; it is not a body scan.")
         with st.expander("Download the public 3D replay"):

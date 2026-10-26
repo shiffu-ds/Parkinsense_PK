@@ -53,6 +53,13 @@ class RecoveryToken(IdentityMixin, Base):
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class LoginFailure(IdentityMixin, Base):
+    """Recent wrong-password sign-ins, keyed by a hash of the typed email, never the email."""
+    __tablename__ = "login_failures"
+    __table_args__ = (Index("login_failures_key_time", "limiter_hash", "created_at"),)
+    limiter_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
 class RecoveryAttempt(IdentityMixin, Base):
     __tablename__ = "recovery_attempts"
     # A presented high-entropy token hash is a safe limiter key; raw token never persists.

@@ -1,6 +1,6 @@
 """Editorial video built from measured outputs, not a recording of app interactions."""
 from pathlib import Path
-import json, math, subprocess, textwrap, shutil
+import json, math, subprocess
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import soundfile as sf

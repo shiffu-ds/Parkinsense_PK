@@ -6,6 +6,8 @@ This is a working development implementation, not a clinically validated release
 
 Every analysis module now includes a native-unit **3D statistical review**, automatic printable patient reports after saving, and numbered fault guidance. The workflow, sources and data rules are described in `docs/statistics-reports-guidance.md`.
 
+The interface was refreshed on 21 Oct 2026: a light clinic theme (with dark mode), self-hosted Atkinson Hyperlegible Next and Noto Naskh Arabic fonts, a per-visit **medicine timing** record (ON / wearing off / OFF), a 2D progress trend, a clinician caseload and full Urdu/Roman Urdu check-ins. Details are in `docs/ui-refresh-2026-10-21.md`, including the 25 Oct follow-up (theme-switch fix, lighter visit lists, a sign-in pause after repeated wrong passwords and verbatim display of patient notes). How other Parkinson's monitoring products compare, and what to build next, is in `docs/competitor-gap-analysis-2026-10-25.md`. The additions built from it on 26 Oct — touchscreen spiral and tapping tests, a same-setup check, a medicine ON/OFF diary, a clinician weekly task plan, practice aids, read-aloud and help/walking-aid records — are in `docs/feature-additions-2026-10-26.md`.
+
 Live movement capture also has task-focused depth-styled joint lines on the camera and an adjacent **live world-XYZ 3D view**, with short fading trails and automatic clearing when tracking is lost. Both displays start enabled. Setup, controls and geometry rules are in `docs/live-tracking.md`.
 
 ## Run locally

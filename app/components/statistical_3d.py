@@ -16,7 +16,14 @@ from ml.common.statistics import (
     measurements, recording_curves, safe_label, source_note,
 )
 
-COLORS = ("#63aaa5", "#859fbd", "#bea47a", "#96b596", "#ab99ba", "#b88982")
+from app.components.palette import chart_layout, scene_axis, tokens
+
+
+def _series(index):
+    colors = tokens().series
+    return colors[index % len(colors)]
+
+
 CAMERAS = {
     "Isometric": {"x": 2.0, "y": -2.0, "z": 1.45},
     "Front": {"x": 0.05, "y": -2.8, "z": 0.85},
@@ -51,8 +58,8 @@ def module_statistics_groups(result: dict, task: str, *, view: str = "auto", his
 
 def _empty(message="Accepted measurements are needed before this graph can be drawn."):
     figure = go.Figure()
-    figure.add_annotation(text=safe_label(message, limit=220), showarrow=False, font={"size": 15, "color": "#aab8c5"})
-    figure.update_layout(template="plotly_dark", paper_bgcolor="#101b27", plot_bgcolor="#101b27", height=360,
+    figure.add_annotation(text=safe_label(message, limit=220), showarrow=False, font={"size": 15, "color": tokens().ink_muted})
+    figure.update_layout(**chart_layout(), height=360,
                          xaxis={"visible": False}, yaxis={"visible": False}, margin={"l": 15, "r": 15, "t": 35, "b": 35},
                          meta={"available": False})
     return figure
@@ -72,13 +79,11 @@ def _compact_tick(label):
 
 
 def _style(figure, *, unit, x_title, y_title, camera, title, tickvals_x=None, ticktext_x=None, tickvals_y=None, ticktext_y=None, y_range=None):
-    axis = {"showbackground": True, "backgroundcolor": "#13202d", "gridcolor": "#2a3b49", "zerolinecolor": "#64798b",
-            "color": "#b8c7d4", "showspikes": False, "tickfont": {"size": 10}, "title_font": {"size": 11}}
+    axis = scene_axis()
     figure.update_layout(
-        template="plotly_dark", paper_bgcolor="#101b27", plot_bgcolor="#101b27", height=490,
-        title={"text": title, "font": {"size": 16, "color": "#d9e5eb"}, "x": 0.02},
-        font={"family": "Inter, Arial, sans-serif", "color": "#c3d2dd", "size": 12},
-        margin={"l": 45, "r": 50, "t": 55, "b": 85}, hoverlabel={"bgcolor": "#253744", "font_size": 12},
+        **chart_layout(), height=490,
+        title={"text": title, "font": {"size": 16, "color": tokens().ink}, "x": 0.02},
+        margin={"l": 45, "r": 50, "t": 55, "b": 85},
         scene={"xaxis": {**axis, "title": {"text": x_title}, "tickvals": tickvals_x, "ticktext": [_compact_tick(label) for label in ticktext_x] if ticktext_x else None},
                "yaxis": {**axis, "title": {"text": y_title}, "tickvals": tickvals_y, "ticktext": [_compact_tick(label) for label in ticktext_y] if ticktext_y else None, "range": y_range},
                "zaxis": {**axis, "title": {"text": unit}, "rangemode": "tozero"},
@@ -130,8 +135,8 @@ def build_module_statistics_figure(result: dict, task: str, *, unit: str | None 
             timestamps, values = bounded_curve(curve)
             series = [number if time is not None else None for time in timestamps]
             figure.add_trace(go.Scatter3d(x=timestamps, y=series, z=values, mode="lines+markers", connectgaps=False,
-                                         marker={"color": COLORS[number % len(COLORS)], "size": 2.6},
-                                         line={"color": COLORS[number % len(COLORS)], "width": 4}, name=curve.label,
+                                         marker={"color": _series(number), "size": 2.6},
+                                         line={"color": _series(number), "width": 4}, name=curve.label,
                                          hovertemplate=f"{curve.label}<br>Time %{{x:.2f}} s<br>Value %{{z:.4g}} {unit}<extra>Recorded movement proxy</extra>"))
         _style(figure, unit=unit, x_title="Elapsed time (seconds)", y_title="Measurement series", camera=camera,
                title="Movement over the recording", tickvals_y=list(range(len(curves))), ticktext_y=[curve.label for curve in curves])
@@ -153,7 +158,7 @@ def build_module_statistics_figure(result: dict, task: str, *, unit: str | None 
                     z.append(row.value)
                     dates.append(visit["date"])
             figure.add_trace(go.Scatter3d(x=x, y=[number] * len(x), z=z, mode="markers", connectgaps=False,
-                                         marker={"color": COLORS[number % len(COLORS)], "size": 5}, name=definition.label,
+                                         marker={"color": _series(number), "size": 5}, name=definition.label,
                                          customdata=dates,
                                          hovertemplate=f"{definition.label}<br>Visit %{{customdata}}<br>Value %{{z:.4g}} {unit}<extra>{definition.source}</extra>"))
         # Sparse ticks keep a long history legible. All visits remain positions
@@ -170,11 +175,11 @@ def build_module_statistics_figure(result: dict, task: str, *, unit: str | None 
     else:
         rows = [row for row in measurements(result, task) if row.unit == unit and (keyset is None or row.key in keyset)][:32]
         for number, row in enumerate(rows):
-            figure.add_trace(_bar(number, 0, row.value, COLORS[number % len(COLORS)], row.label))
+            figure.add_trace(_bar(number, 0, row.value, _series(number), row.label))
         # Top markers keep actual zero values visible without fabricating a
         # bar height, and hold one exact value per measurement in the hover.
         figure.add_trace(go.Scatter3d(x=list(range(len(rows))), y=[0] * len(rows), z=[row.value for row in rows], mode="markers",
-                                     marker={"color": [COLORS[i % len(COLORS)] for i in range(len(rows))], "size": 5},
+                                     marker={"color": [_series(i) for i in range(len(rows))], "size": 5},
                                      customdata=[[row.label, row.unit, row.source] for row in rows], name="Recorded value", showlegend=False,
                                      hovertemplate="%{customdata[0]}<br>Value %{z:.4g} %{customdata[1]}<extra>%{customdata[2]}</extra>"))
         _style(figure, unit=unit, x_title="Measurement", y_title="Analysis", camera=camera,

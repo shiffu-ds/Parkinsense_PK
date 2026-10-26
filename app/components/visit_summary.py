@@ -25,22 +25,28 @@ _VALUES = {
 }
 _CSS = """
 <style>
-.ps-visit-summary {border:1px solid #2d404a;border-radius:9px;background:#14212b;color:#edf1ec;overflow:hidden;width:100%;}
-.ps-visit-summary table {border-collapse:collapse;width:100%;margin:0;font-size:.95rem;}
-.ps-visit-summary th,.ps-visit-summary td {padding:.9rem 1rem;text-align:start;border-bottom:1px solid #2d404a;overflow-wrap:anywhere;}
-.ps-visit-summary th {background:#1b2d37;color:#bdcbd8;font-weight:600;}
+.ps-visit-summary {border:1px solid var(--ps-line);border-radius:6px;background:var(--ps-surface);color:var(--ps-ink);overflow:hidden;width:100%;}
+.ps-visit-summary table {border-collapse:collapse;width:100%;margin:0;font-size:.97rem;font-variant-numeric:tabular-nums;}
+.ps-visit-summary th,.ps-visit-summary td {padding:.85rem 1rem;text-align:start;border-bottom:1px solid var(--ps-line);overflow-wrap:anywhere;}
+.ps-visit-summary th {background:var(--ps-sunken);color:var(--ps-muted);font-weight:600;font-size:.88rem;}
 .ps-visit-summary tbody tr:last-child td {border-bottom:none;}
-.ps-visit-summary .ps-status {display:inline-block;border:1px solid #42616a;border-radius:6px;padding:.2rem .55rem;line-height:1.5;}
-.ps-visit-summary .ps-review {color:#bdcbd8;}
+.ps-visit-summary .ps-status {display:inline-flex;align-items:center;gap:.4rem;font-weight:600;margin:0;border:0;background:none;padding:0;font-size:.95rem;}
+.ps-visit-summary .ps-status::before {content:'';width:8px;height:8px;border-radius:50%;background:currentColor;}
+.ps-visit-summary .ps-tone-draft {color:var(--ps-ochre);}
+.ps-visit-summary .ps-tone-completed {color:var(--ps-accent);}
+.ps-visit-summary .ps-tone-abandoned {color:var(--ps-muted);}
+.ps-visit-summary .ps-review {color:var(--ps-muted);}
+.ps-visit-summary .ps-review.ps-tone-reviewed {color:var(--ps-ink);font-weight:600;}
+.ps-visit-summary .ps-value {unicode-bidi:plaintext;}
 .ps-visit-summary .ps-mobile-label {display:none;}
 .ps-visit-summary caption {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;}
-@media(max-width:720px) {
+@media (max-width: 720px) {
   .ps-visit-summary table,.ps-visit-summary tbody {display:block;}
   .ps-visit-summary thead {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
-  .ps-visit-summary tbody tr {display:block;padding:.65rem .9rem;border-bottom:1px solid #2d404a;}
+  .ps-visit-summary tbody tr {display:block;padding:.65rem .9rem;border-bottom:1px solid var(--ps-line);}
   .ps-visit-summary tbody tr:last-child {border-bottom:none;}
-  .ps-visit-summary td {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:.8rem;align-items:center;border:0;padding:.5rem 0;}
-  .ps-visit-summary .ps-mobile-label {display:block;color:#aab7bc;font-size:.88rem;}
+  .ps-visit-summary td {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:.8rem;align-items:center;border:0;padding:.45rem 0;}
+  .ps-visit-summary .ps-mobile-label {display:block;color:var(--ps-muted);font-size:.88rem;}
 }
 </style>
 """
@@ -66,7 +72,9 @@ def visit_summary_html(rows, language="English"):
         values = (row["visit"], _value(row["status"], language), row["tasks_saved"], _value(row["review"], language))
         cells = []
         for i, (label, value) in enumerate(zip(headers, values)):
-            css_class = "ps-status" if i == 1 else "ps-review" if i == 3 else "ps-value"
+            tone = str(row["status"] if i == 1 else row["review"] if i == 3 else "").strip().lower()
+            tone = f" ps-tone-{tone}" if tone in {"draft", "completed", "abandoned", "reviewed"} else ""
+            css_class = ("ps-status" if i == 1 else "ps-review" if i == 3 else "ps-value") + tone
             cells.append(f'<td headers="ps-visit-col-{i}"><span class="ps-mobile-label" aria-hidden="true">{escape(label)}</span>'
                          f'<span class="{css_class}">{escape(str(value), quote=True)}</span></td>')
         body.append("<tr>" + "".join(cells) + "</tr>")

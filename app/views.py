@@ -1,6 +1,6 @@
 """Patient, clinician and administrator experiences over authorized services."""
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import os
@@ -11,13 +11,15 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import streamlit as st
 
-from app.components.design import brand_wordmark, empty_state, inject_styles, section_header, status_pill
+from app.components.design import (
+    empty_state, inject_styles, next_step, plain_text, section_header, spiral_figure, status_pill, status_row,
+    task_card, visit_progress,
+)
 from app.components.patient_language import (
     adl_choice, adl_label, camera_translations, configure_patient_language, hub_card, render_steps,
-    resolved_language, task_label, text, voice_prompt, write_patient,
+    resolved_language, task_label, text, voice_prompt, weekday_name, write_patient,
 )
 from backend import services
-from backend.config import get_settings
 from app.components.private_access import begin_session, private_download, private_player
 
 LANGUAGES = ["English", "Urdu", "Roman Urdu", "Pashto", "Mixed"]
@@ -29,6 +31,8 @@ LABELS = {
     "voice": "Voice", "nlp": "Daily-life description", "adl": "Daily activities",
     "voice_vowel": "Voice — sustained vowel", "voice_sentence": "Voice — fixed sentence",
     "voice_natural": "Voice — natural speech",
+    "spiral_left": "Spiral drawing — left hand", "spiral_right": "Spiral drawing — right hand",
+    "touch_tap_left": "Two-circle tapping — left hand", "touch_tap_right": "Two-circle tapping — right hand",
 }
 INSTRUCTIONS = {
     "gait": "Place the device on a stable stand with your full body visible. Walk along a clear, familiar route, turn safely, and return. Record 5–45 seconds. Use your usual mobility aid and assistance.",
@@ -118,17 +122,28 @@ def time_label(value):
 
 
 def auth_page():
-    brand_wordmark()
-    st.title("Movement, with everyday life in view")
-    st.write("Record a task, tell your care team how the day felt, and return to your progress when you're ready.")
-    st.caption("A local workspace for patient recordings and clinician review. Measurement summaries support discussion; diagnosis and treatment decisions belong with your clinician.")
-    with st.container(border=True):
-        st.subheader("Pehli dafa istemal kar rahe hain?")
-        st.write("Pehle public example par tareeqa dekhein: **recording chunein → Analyze karein → graphs aur report kholein**.")
-        if st.button("Try a public demo — bina login", key="open_public_demo", type="primary"):
-            from app.components.public_demo import public_demo_page
-            st.switch_page(st.Page(public_demo_page, title="Try a public demo", url_path="public-demo"))
-        st.caption("Apni recording ke liye neeche login karein, phir Start Assessment → movement task → Upload ya Live Camera chunein.")
+    intro, art = st.columns([1.3, 1], gap="large")
+    with art:
+        spiral_figure("The spiral is one of the oldest bedside checks for tremor. ParkinSense keeps to that idea: "
+                      "short, repeatable tasks you can record at home and review with your clinician.")
+        with st.container(border=True):
+            st.subheader("Pehli dafa istemal kar rahe hain?")
+            st.write("Pehle public example par tareeqa dekhein: **recording chunein, Analyze karein, phir graphs aur report kholein**.")
+            if st.button("Try a public demo — bina login", key="open_public_demo", type="primary"):
+                from app.components.public_demo import public_demo_page
+                st.switch_page(st.Page(public_demo_page, title="Try a public demo", url_path="public-demo"))
+            st.caption("Apni recording ke liye login karein, phir Start Assessment mein movement task aur Upload ya Live Camera chunein.")
+    with intro:
+        st.title("Movement, with everyday life in view")
+        st.markdown('<p class="ps-lede">Record a task, tell your care team how the day felt, and come back to your progress when you are ready.</p>',
+                    unsafe_allow_html=True)
+        _auth_forms()
+    st.caption("A local workspace for patient recordings and clinician review. Measurement summaries support discussion; "
+               "diagnosis and treatment decisions belong with your clinician.")
+    _recovery_form()
+
+
+def _auth_forms():
     login, register = st.tabs(["Log in", "Register"])
     with login, st.form("login"):
         email = st.text_input("Email", key="login_email")
@@ -160,6 +175,9 @@ def auth_page():
                     st.rerun()
                 except ValueError as exc:
                     st.error(str(exc))
+
+
+def _recovery_form():
     with st.expander("Account recovery / Account wapas hasil karein / اکاؤنٹ کی بحالی"):
         st.write("Contact your workspace administrator through your usual trusted channel. After verifying your identity, they can give you a temporary recovery code. This app does not send recovery emails automatically.")
         with st.form("account_recovery"):
@@ -212,21 +230,136 @@ def active_assessment():
     st.stop()
 
 
+TASK_GROUPS = {
+    "gait": ["gait", "turning"], "hand": ["finger_left", "finger_right", "hand_open_close"],
+    "transfer": ["sit_to_stand"], "reach": ["reach", "grasp", "object_transfer"],
+    "voice": ["voice_vowel", "voice_sentence", "voice_natural", "nlp"], "adl": ["adl"],
+    "touch": ["spiral_left", "spiral_right", "touch_tap_left", "touch_tap_right"],
+}
+
+
+def groups_saved(item):
+    modules = item.get("modules", {})
+    return sum(any(task in modules for task in tasks) for tasks in TASK_GROUPS.values())
+
+
+def _date_only(value):
+    # Directional isolates keep "21 Oct 2026" in order inside Urdu sentences.
+    return "\u2066" + time_label(value).split(",")[0] + "\u2069" if value else "—"
+
+
+# A finished review is pointed out on Home for this long; after that the next
+# step goes back to starting a visit instead of repeating an old review forever.
+REVIEW_NOTICE_DAYS = 14
+
+
+def fresh_review(items, now=None):
+    """The latest completed visit, if its clinician review is recent; otherwise None."""
+    latest = next((i for i in items if i["status"] == "completed"), None)
+    if not latest or latest.get("review_status") != "reviewed" or not latest.get("reviewed_at"):
+        return None
+    reviewed_at = datetime.fromisoformat(latest["reviewed_at"])
+    if reviewed_at.tzinfo is None:
+        reviewed_at = reviewed_at.replace(tzinfo=timezone.utc)
+    return latest if (now or datetime.now(timezone.utc)) - reviewed_at <= timedelta(days=REVIEW_NOTICE_DAYS) else None
+
+
+def planned_review_date(plans, today):
+    """Review date from the newest follow-up note that sets one, if it is still ahead (ISO dates)."""
+    planned = next((p["next_review_date"] for p in plans if p.get("next_review_date")), None)
+    return planned if planned and planned >= today else None
+
+
+def todays_plan(user_id, items):
+    """(plan, groups planned for today, those not yet saved in a visit started today)."""
+    from backend.services import task_plan
+    try:
+        plan = task_plan.get_task_plan(user_id)
+    except (PermissionError, ValueError, LookupError):
+        return None, [], []
+    local = ZoneInfo("Asia/Karachi")
+    today = datetime.now(local).date()
+    planned = task_plan.planned_on(plan, today.weekday())
+    done = set()
+    for item in items:
+        if item.get("created_at") and datetime.fromisoformat(item["created_at"]).astimezone(local).date() == today:
+            done |= {group for group, tasks in TASK_GROUPS.items() if any(task in item.get("modules", {}) for task in tasks)}
+    return plan, planned, [group for group in planned if group not in done]
+
+
+def _medicine_prompt(user, language):
+    """After a usual medicine time, ask once how it is working; one tap answers."""
+    from backend.services import medication_diary
+    from app.components.diary_panel import clock, quick_entry
+    try:
+        times = medication_diary.get_medicine_times(user["id"])
+        due = medication_diary.due_medicine_time(times, medication_diary.list_diary(user["id"], days=1)) if times else None
+    except (PermissionError, ValueError):
+        due = None
+    if due:
+        next_step(text("next_diary", language, time=clock(due)), text("next_diary_detail", language), "waiting")
+        quick_entry(user, language, key="home_diary")
+    elif notice := st.session_state.pop("home_diary_notice", None):
+        st.success(text("diary_saved", language, time=clock(datetime.fromisoformat(notice).astimezone(ZoneInfo("Asia/Karachi")).strftime("%H:%M"))))
+
+
 def patient_home():
+    from backend.services import care
     user = actor()
     language = _patient_surface(user)
-    status_pill(text("home_status", language), "care")
     st.title(text("welcome", language, name=user['full_name']))
     write_patient(text("home_intro", language), language)
     items = history()
-    cols = st.columns(3)
+    unfinished = [i for i in items if i["status"] == "draft"]
+    try:
+        checkins = care.list_checkins(user["id"], limit=1)
+        plans = care.list_care_plans(user["id"])
+    except (PermissionError, ValueError):
+        checkins, plans = [], []
+    today = datetime.now(ZoneInfo("Asia/Karachi")).date().isoformat()
+    checked_today = bool(checkins) and checkins[0]["date"] == today
+    reviewed = fresh_review(items)
+    _medicine_prompt(user, language)
+    weekly, _planned_groups, pending = todays_plan(user["id"], items)
+    target = assessment_hub
+    if unfinished:
+        visit = unfinished[0]
+        next_step(text("next_resume", language, date=_date_only(visit["created_at"])),
+                  text("next_resume_detail", language, done=groups_saved(visit), total=len(TASK_GROUPS)), "waiting")
+    elif pending:
+        next_step(text("plan_today", language, tasks=", ".join(hub_card(group, language)[0] for group in pending)),
+                  text("plan_today_detail", language))
+    elif not checked_today:
+        next_step(text("next_checkin", language), text("next_checkin_detail", language))
+        target = my_care_page
+    elif reviewed:
+        next_step(text("next_reviewed", language, date=_date_only(reviewed["created_at"])),
+                  text("next_reviewed_detail", language))
+        target = reports_page
+    else:
+        next_step(text("next_new", language), text("next_new_detail", language))
+    first, second, _spacer = st.columns([1.2, 1.2, 1])
+    if first.button(text("start_resume", language), type="primary" if target is assessment_hub else "secondary", width="stretch"):
+        go(assessment_hub)
+    if second.button(text("my_goals", language), type="primary" if target is my_care_page else "secondary", width="stretch"):
+        go(my_care_page)
+    if target is reports_page and st.button(text("open_reports", language)):
+        go(reports_page)
+    cols = st.columns(4)
     cols[0].metric(text("assessments", language), len(items))
     cols[1].metric(text("completed", language), sum(i["status"] == "completed" for i in items))
-    cols[2].metric(text("latest_visit", language), time_label(items[0]["created_at"]).split(",")[0] if items else text("no_visits", language))
-    if st.button(text("start_resume", language), type="primary"):
-        go(assessment_hub)
-    if st.button(text("my_goals", language)):
-        go(my_care_page)
+    cols[2].metric(text("latest_visit", language), _date_only(items[0]["created_at"]) if items else text("no_visits", language))
+    cols[3].metric(text("last_checkin", language),
+                   text("checkin_today", language) if checked_today else _date_only(checkins[0]["date"]) if checkins else text("no_checkin", language))
+    planned = planned_review_date(plans, today)
+    if planned:
+        st.caption(text("next_review_date", language, date=datetime.fromisoformat(planned).strftime("%d %b %Y")))
+    if weekly:
+        summary = " · ".join(f"{hub_card(group, language)[0]} ({', '.join(weekday_name(day, language) for day in days)})"
+                             for group, days in weekly["schedule"].items())
+        st.caption(text("plan_week", language, plan=summary))
+        if weekly.get("note"):
+            st.caption(plain_text(weekly["note"]))
     if items:
         section_header(text("recent_visits", language), text("visits_detail", language))
         from app.components.visit_summary import render_visit_summary
@@ -236,8 +369,6 @@ def patient_home():
                               for i in items[:5]], language)
     else:
         empty_state(text("first_visit", language), text("first_visit_detail", language))
-    st.divider()
-    section_header(text("day_note", language), text("day_note_detail", language))
 
 
 def my_care_page():
@@ -245,7 +376,8 @@ def my_care_page():
     user = actor()
     if user["role"] != "patient":
         raise PermissionError("This page is for your own patient care notes.")
-    st.title("My Care")
+    language = _patient_surface(user)
+    st.title({"Urdu": "روزانہ حال اور مقصد", "Roman Urdu": "Rozana haal aur maqsad"}.get(language, "Check-in & goals"))
     patient_care_panel(user)
 
 
@@ -259,51 +391,78 @@ def care_plan_page():
 
 
 def assessment_hub():
+    from app.components.visit_context_panel import assistance_form, medication_form
     user = actor()
     language = _patient_surface(user)
     st.title(text("hub_title", language))
     write_patient(text("hub_intro", language), language)
+    if st.session_state.pop("hub_notice", None):
+        st.success(text("assessment_completed", language))
     items = history()
     unfinished = [i for i in items if i["status"] not in {"completed", "abandoned"}]
-    if st.button(text("new_assessment", language), type="primary"):
-        item = services.create_assessment(user["id"])
-        st.session_state.active_assessment_id = item["id"]
-        st.rerun()
-    if unfinished:
-        selected = st.selectbox(text("resume_assessment", language), unfinished, format_func=lambda i: time_label(i["created_at"]))
-        if st.button(text("resume_selected", language)):
+    _plan, planned, _pending = todays_plan(user["id"], items)
+    aid = st.session_state.get("active_assessment_id")
+    item = services.get_assessment(user["id"], aid) if aid else None
+    if item and item["status"] in {"completed", "abandoned"}:
+        st.session_state.pop("active_assessment_id", None)
+        item = None
+    if item is None:
+        if unfinished:
+            next_step(text("next_resume", language, date=_date_only(unfinished[0]["created_at"])),
+                      text("next_resume_detail", language, done=groups_saved(unfinished[0]), total=len(TASK_GROUPS)), "waiting")
+            selected = st.selectbox(text("resume_assessment", language), unfinished, format_func=lambda i: time_label(i["created_at"]))
+        resume_col, new_col, _ = st.columns([1.1, 1.1, 1])
+        if unfinished and resume_col.button(text("resume_selected", language), type="primary", width="stretch"):
             st.session_state.active_assessment_id = selected["id"]
             st.rerun()
-    aid = st.session_state.get("active_assessment_id")
-    if aid:
-        item = services.get_assessment(user["id"], aid)
-        status_pill(f"Visit · {time_label(item['created_at'])}")
-        st.caption(text("tasks_saved", language, count=len(item.get('modules', {}))) + f" · {item['status'].title()}")
-        cards = [
-            ("gait", gait_page), ("hand", hand_page), ("transfer", transfer_page),
-            ("reach", reach_page), ("voice", voice_page), ("adl", adl_page),
-        ]
-        for start in range(0, len(cards), 2):
-            for col, (card_key, page) in zip(st.columns(2), cards[start:start+2]):
-                title, detail = hub_card(card_key, language)
-                with col, st.container(border=True):
-                    st.subheader(title)
-                    st.write(detail)
-                    tasks = {gait_page: ["gait", "turning"], hand_page: ["finger_left", "finger_right", "hand_open_close"], transfer_page: ["sit_to_stand"], reach_page: ["reach", "grasp", "object_transfer"], voice_page: ["voice_vowel", "voice_sentence", "voice_natural", "nlp"], adl_page: ["adl"]}[page]
-                    saved = sum(task in item.get("modules", {}) for task in tasks)
-                    st.caption(text("saved_count", language, count=saved) if saved else text("ready", language))
-                    if st.button(text("open_task", language, task=title), key=f"hub_open_{card_key}", width="stretch"):
-                        go(page)
-        if any(is_accepted(r) for r in item.get("modules", {}).values()) and item["status"] not in {"completed", "abandoned"}:
-            if st.button(text("complete_assessment", language)):
-                services.finish_assessment(user["id"], aid)
-                st.session_state.pop("active_assessment_id", None)
-                st.success(text("assessment_completed", language))
-        with st.expander(text("restart_visit", language)):
-            if st.checkbox(text("abandon_visit", language)) and st.button(text("restart_assessment", language)):
-                fresh = services.restart_assessment(user["id"], aid)
-                st.session_state.active_assessment_id = fresh["id"]
+        if (new_col if unfinished else resume_col).button(text("new_assessment", language), type="secondary" if unfinished else "primary", width="stretch"):
+            fresh = services.create_assessment(user["id"])
+            st.session_state.active_assessment_id = fresh["id"]
+            st.rerun()
+        return
+    done = groups_saved(item)
+    status_pill(text("visit_label", language, date="\u2066" + time_label(item["created_at"]) + "\u2069"), "care" if done else "waiting")
+    visit_progress(done, len(TASK_GROUPS), text("visit_progress", language, done=done, total=len(TASK_GROUPS)))
+    st.caption(text("visit_progress", language, done=done, total=len(TASK_GROUPS)))
+    medication_form(user, item, language, expanded=False)
+    assistance_form(user, item, language)
+    pages = {"gait": gait_page, "hand": hand_page, "transfer": transfer_page,
+             "reach": reach_page, "touch": touch_page, "voice": voice_page, "adl": adl_page}
+    keys = list(pages)
+    for start in range(0, len(keys), 2):
+        for col, card_key in zip(st.columns(2, gap="large"), keys[start:start + 2]):
+            title, detail = hub_card(card_key, language)
+            saved = sum(task in item.get("modules", {}) for task in TASK_GROUPS[card_key])
+            with col, st.container(border=True, key=f"ps_task_{'done' if saved else 'open'}_{card_key}"):
+                state = (text("saved_count", language, count=saved) if saved else
+                         text("planned_today", language) if card_key in planned else text("ready", language))
+                task_card(title, detail, state, done=bool(saved))
+                if st.button(text("open_task", language, task=title), key=f"hub_open_{card_key}", width="stretch"):
+                    go(pages[card_key])
+    if any(is_accepted(r) for r in item.get("modules", {}).values()) and item["status"] not in {"completed", "abandoned"}:
+        if st.button(text("complete_assessment", language), type="primary"):
+            services.finish_assessment(user["id"], item["id"])
+            st.session_state.pop("active_assessment_id", None)
+            st.session_state.hub_notice = True
+            st.rerun()
+    with st.expander(text("restart_visit", language)):
+        if st.checkbox(text("abandon_visit", language)) and st.button(text("restart_assessment", language)):
+            fresh = services.restart_assessment(user["id"], item["id"])
+            st.session_state.active_assessment_id = fresh["id"]
+            st.rerun()
+    # Leaving this visit open: go back to another unfinished one, or begin a fresh one.
+    others = [i for i in unfinished if i["id"] != item["id"]]
+    with st.expander(text("switch_visit", language)):
+        if others:
+            other = st.selectbox(text("resume_assessment", language), others,
+                                 format_func=lambda i: time_label(i["created_at"]), key="hub_other_visit")
+            if st.button(text("resume_selected", language), key="hub_switch_resume"):
+                st.session_state.active_assessment_id = other["id"]
                 st.rerun()
+        if st.button(text("new_assessment", language), key="hub_switch_new"):
+            fresh = services.create_assessment(user["id"])
+            st.session_state.active_assessment_id = fresh["id"]
+            st.rerun()
 
 
 def gait_page():
@@ -320,6 +479,94 @@ def transfer_page():
 
 def reach_page():
     movement_page(["reach", "grasp", "object_transfer"])
+
+
+def practice_page():
+    """Browser-only practice aids: a walking beat and louder-voice feedback."""
+    from app.components.practice_tools import cadence_bpm, loudness_practice, metronome
+    language = _patient_surface()
+    st.title(text("practice_title", language))
+    write_patient(text("practice_intro", language), language)
+    walk, voice = st.tabs([text("practice_walk", language), text("practice_voice", language)])
+    with walk:
+        write_patient(text("metronome_intro", language), language)
+        st.caption(text("metronome_safety", language))
+        bpm = cadence_bpm(history())
+        if bpm:
+            st.caption(text("metronome_from_cadence", language))
+        metronome(default_bpm=bpm or 90, key="practice_metronome",
+                  labels={name: text(f"metronome_{name}", language, bpm="{bpm}") for name in ("start", "stop", "slower", "faster", "bpm")})
+    with voice:
+        write_patient(text("loudness_intro", language), language)
+        st.caption(text("loudness_privacy", language))
+        loudness_practice(key="practice_loudness", labels={
+            name: text(f"loudness_{name}", language, seconds="{seconds}")
+            for name in ("ready", "start", "stop", "calibrating", "go", "time", "denied")})
+
+
+def _listen_to_steps(task, language, key):
+    from app.components.patient_language import TASK_STEPS
+    from app.components.read_aloud import listen_button
+    listen_button(TASK_STEPS[task], language, key=key)
+
+
+def touch_page():
+    """Spiral drawing and two-circle tapping on the patient's own screen."""
+    from ml.touch import analyze_touch
+    from app.components.analysis_feedback import attempt_report_panel, failure_result, saved_report_panel
+    from app.components.touch_test import touch_test
+    from app.components.visit_context_panel import timing_reminder
+    language = _patient_surface()
+    item = active_assessment()
+    st.title(text("touch_title", language))
+    timing_reminder(actor(), item, language)
+    write_patient(text("touch_intro", language), language)
+    left, right = st.columns(2)
+    test = left.selectbox(text("touch_test", language), ["spiral", "tapping"],
+                          format_func=lambda value: text(f"touch_{value}", language), key=f"touch_test_{item['id']}")
+    hand = right.radio(text("touch_hand", language), ["right", "left"], horizontal=True,
+                       format_func=lambda value: text(f"hand_{value}", language), key=f"touch_hand_{item['id']}")
+    task = f"{'spiral' if test == 'spiral' else 'touch_tap'}_{hand}"
+    render_steps(task, language)
+    _listen_to_steps(task, language, key=f"listen_{task}")
+    st.caption(text("touch_same_device", language))
+    draft_key = f"draft_{item['id']}_{task}"
+    generation_key = f"touch_generation_{item['id']}_{task}"
+    labels = {name: text(f"touch_{name}", language) for name in ("analysing", "measured", "clear", "done", "stop", "canvas")}
+    labels["ready"] = text(f"touch_ready_{test}", language)
+    labels["remaining"] = text("touch_remaining", language, seconds="{seconds}")
+    # A saved result starts a fresh canvas; an analysed attempt stays beside its result.
+    attempts_key = f"touch_attempts_{item['id']}_{task}"
+    payload = touch_test(test, key=f"touch_canvas_{item['id']}_{task}_{st.session_state.get(generation_key, 0)}",
+                         labels=labels, measured=st.session_state.get(attempts_key, 0) if draft_key in st.session_state else 0)
+    if payload is not None:
+        try:
+            result = analyze_touch(task, payload)
+        except ValueError as exc:
+            result = failure_result(exc, task, language=actor()["language"])
+        st.session_state[draft_key] = {"result": result, "media_key": None}
+        st.session_state[attempts_key] = st.session_state.get(attempts_key, 0) + 1
+        st.rerun()  # Redraw so the canvas learns this attempt was measured.
+    if st.session_state.pop(f"touch_notice_{item['id']}", None):
+        st.success(text("touch_saved", language))
+    draft = st.session_state.get(draft_key)
+    if draft:
+        review_result(draft["result"], task, baseline=baseline_for(task, item["id"], current=draft["result"]),
+                      identity=f"touch_draft_{item['id']}_{task}", assessment_id=item["id"])
+        attempt_report_panel(actor(), item, task, draft["result"], identity=draft_key)
+        if st.button(text("save_result", language), type="primary", disabled=not is_accepted(draft["result"]),
+                     key=f"touch_save_{item['id']}_{task}"):
+            services.save_module(actor()["id"], item["id"], task, draft["result"])
+            del st.session_state[draft_key]
+            st.session_state[generation_key] = st.session_state.get(generation_key, 0) + 1
+            st.session_state[f"touch_notice_{item['id']}"] = True
+            st.rerun()
+    saved = services.get_assessment(actor()["id"], item["id"])
+    if not st.session_state.get(draft_key) and task in saved.get("modules", {}):
+        section_header(text("saved_analysis", language), text("current_visit", language))
+        review_result(saved["modules"][task], task, identity=f"touch_saved_{saved['id']}_{task}", assessment_id=saved["id"])
+    if saved.get("reports"):
+        saved_report_panel(actor(), saved, identity=f"touch_{item['id']}_{task}")
 
 
 def _analyze_media(item, task, filename, data, capture_metadata=None):
@@ -365,14 +612,20 @@ def movement_page(tasks):
     from streamlit_webrtc import WebRtcMode, webrtc_streamer
     language = _patient_surface()
     item = active_assessment()
+    heading = st.empty()
     task = st.selectbox(text("movement_task", language), tasks, format_func=lambda value: task_label(value, language))
-    st.title(task_label(task, language))
+    heading.title(task_label(task, language))
     st.session_state.current_step = 1
+    from app.components.visit_context_panel import timing_reminder
+    timing_reminder(actor(), item, language)
     render_steps(task, language)
+    _listen_to_steps(task, language, key=f"listen_{task}")
     with st.expander(text("setup", language)):
         write_patient(text("setup_camera", language), language)
         write_patient(text("setup_stop", language), language)
         st.caption(text("quality_check", language))
+    from app.components.setup_check import setup_guide
+    setup_guide(task, baseline_for(task, item["id"]), language, key=f"setup_guide_{item['id']}_{task}")
     # The values remain stable IDs; translated labels never reach analysis APIs.
     mode = st.radio(text("recording_source", language), ["Upload Recorded Video", "Live Camera"],
         format_func=lambda value: text("upload_video" if value == "Upload Recorded Video" else "live_camera", language), horizontal=True)
@@ -404,11 +657,14 @@ def movement_page(tasks):
         video_constraints = {"width": {"ideal": 1280}, "height": {"ideal": 720}, "frameRate": {"ideal": 30, "max": 30}}
         if lens != "auto":
             video_constraints["facingMode"] = {"ideal": "environment" if lens == "rear" else "user"}
-        root = get_settings().storage_root / "capture"
-        root.mkdir(parents=True, exist_ok=True, mode=0o700)
         capture_key = f"capture_{item['id']}_{task}"
         if capture_key not in st.session_state:
-            fd, path = tempfile.mkstemp(suffix=".avi", dir=root)
+            from backend.storage import capture_root, sweep_stale_captures
+            try:
+                sweep_stale_captures()  # Clips left behind by sessions that never logged out.
+            except OSError:
+                pass
+            fd, path = tempfile.mkstemp(suffix=".avi", dir=capture_root())
             os.close(fd)
             st.session_state[capture_key] = path
         path = st.session_state[capture_key]
@@ -464,6 +720,9 @@ def baseline_for(task, excluding=None, pid=None, current=None):
             if current and ((result.get("method") or result.get("analysis_version")) != (current.get("method") or current.get("analysis_version"))
                             or result.get("language") != current.get("language") or result.get("task") != current.get("task")):
                 continue
+            if result.get(services.FRAMES_OMITTED):
+                # Visit lists leave out landmarks; the replay overlay needs this one visit in full.
+                result = services.get_assessment(actor()["id"], visit["id"])["modules"].get(task, result)
             return result
     return None
 
@@ -479,12 +738,18 @@ def review_result(result, task, baseline=None, media_path=None, history_items=No
     (st.success if accepted else st.warning)(text("accepted_responses" if accepted and self_report else "accepted_recording" if accepted else "retry", language))
     if accepted and not self_report:
         st.info(text("task_review_required", language))
+    if accepted and baseline and not self_report:
+        from app.components.setup_check import setup_notice
+        setup_notice(result, baseline, task, language)
     identity = identity or (str(media_path) if media_path else hashlib.sha256(json.dumps(result, sort_keys=True, default=str).encode()).hexdigest()) + task
     render_guidance(result, task, language=actor()["language"], identity=f"{identity}_guidance")
     if accepted and result.get("landmark_frames"):
         from app.components.motion_studio import movement_studio
         movement_studio({**result, "task": task}, baseline={**baseline, "task": task} if baseline else None, identity=identity,
                         export_context={"user": actor(), "assessment_id": assessment_id} if assessment_id else None)
+    if task in TASK_GROUPS["touch"]:
+        from app.components.touch_review import render_touch_result
+        render_touch_result(result, key=f"touch_{hashlib.sha256(identity.encode()).hexdigest()[:16]}")
     module_statistics_panel(result, task, identity=f"stats_{identity}", history=history_items)
     metadata = result.get("feature_metadata", {})
     rows = measurements(result, task)
@@ -525,12 +790,17 @@ def voice_page():
     ui_language = _patient_surface()
     item = active_assessment()
     st.title(text("voice_title", ui_language))
+    from app.components.visit_context_panel import timing_reminder
+    timing_reminder(actor(), item, ui_language)
     write_patient(text("voice_setup", ui_language), ui_language)
     language = st.selectbox(text("speech_language", ui_language), LANGUAGES, index=LANGUAGES.index(actor()["language"]) if actor()["language"] in LANGUAGES else 0)
     task = st.selectbox(text("voice_task", ui_language), ["vowel", "sentence", "natural"], format_func=lambda value: text(value, ui_language))
     # A fixed sentence follows the recording language, even when interface
     # labels use a different saved profile language.
     write_patient(voice_prompt(task, language), resolved_language(language))
+    from app.components.patient_language import VOICE_PROMPTS
+    from app.components.read_aloud import listen_button
+    listen_button(VOICE_PROMPTS[task], language, key=f"listen_voice_{task}")
     if language not in {"English", "Urdu", "Roman Urdu"}:
         st.caption("The task prompt is shown in English for this speech language. Agree a consistent sentence with your clinician before comparing visits.")
     mode = st.radio(text("audio_source", ui_language), ["Microphone", "Upload WAV"],
@@ -622,7 +892,13 @@ def select_visit(items=None):
         st.info("No assessments have been saved yet.")
         st.stop()
     by_id = {item["id"]: item for item in items}
-    selected = st.selectbox("Assessment", list(by_id), format_func=lambda visit_id: f"{time_label(by_id[visit_id]['created_at'])} · {by_id[visit_id]['status']} · {visit_id[:8]}")
+
+    def visit_name(visit_id):
+        visit = by_id[visit_id]
+        status = STATUS_WORDS.get(visit["status"], visit["status"])
+        review = ", reviewed" if visit.get("review_status") == "reviewed" else ""
+        return f"{time_label(visit['created_at'])} — {status.lower()}{review} (ref {visit_id[:6]})"
+    selected = st.selectbox("Assessment", list(by_id), format_func=visit_name)
     return services.get_assessment(actor()["id"], selected)
 
 
@@ -630,7 +906,8 @@ def results_page():
     st.title("My Results")
     visits = history()
     item = select_visit(visits)
-    st.caption(f"Review status: {item.get('review_status', 'Awaiting clinician review')}")
+    reviewed = item.get("review_status") == "reviewed"
+    status_pill(REVIEW_WORDS.get(item.get("review_status"), "Awaiting review"), "care" if reviewed else "waiting")
     if not item.get("modules"):
         st.info("This assessment does not have saved results yet.")
     for task, result in item.get("modules", {}).items():
@@ -658,8 +935,12 @@ def motion_page():
 
 
 def progress_page():
+    from ml.common.statistics import measurement_definition
+    from app.components.trend_chart import render_trend
+    from backend.services.visit_context import list_visit_contexts
     st.title("Progress over time")
-    visits = history(patient_id())
+    pid = patient_id()
+    visits = history(pid)
     rows = []
     for visit in reversed(visits):
         if visit["status"] == "abandoned":
@@ -668,15 +949,24 @@ def progress_page():
             if not is_accepted(result):
                 continue
             for feature, value in result.get("features", {}).items():
-                if isinstance(value, (float, int)):
-                    rows.append({"Date": visit["created_at"], "Task": task, "Measure": feature, "Value": value, "Method": result.get("method", result.get("analysis_version", "Unspecified")), "Language": result.get("language", "Not applicable")})
+                if isinstance(value, (float, int)) and not isinstance(value, bool):
+                    definition = measurement_definition(result, feature, task) or {}
+                    rows.append({"Date": visit["created_at"], "Visit": visit["id"], "Task": task, "Measure": feature,
+                                 "Label": definition.get("label", feature.replace("_", " ").capitalize()),
+                                 "Unit": definition.get("unit", "value"), "Value": value,
+                                 "Method": result.get("method", result.get("analysis_version", "Unspecified")),
+                                 "Language": result.get("language", "Not applicable")})
     if not rows:
-        st.info("Your accepted task measurements will appear here after you save a result.")
+        empty_state("Nothing to compare yet", "Accepted task measurements appear here after you save a result. "
+                    "Two visits with the same task are enough to draw a line.")
         return
     df = pd.DataFrame(rows)
-    task = st.selectbox("Task", sorted(df.Task.unique()), format_func=lambda k: LABELS.get(k, k.replace("_", " ")))
+    left, right = st.columns(2)
+    task = left.selectbox("Task", sorted(df.Task.unique()), format_func=lambda k: LABELS.get(k, k.replace("_", " ")))
     subset = df[df.Task == task]
-    feature = st.selectbox("Measure", sorted(subset.Measure.unique()), format_func=lambda k: k.replace("_", " "))
+    labels = subset.drop_duplicates("Measure").set_index("Measure")["Label"].to_dict()
+    feature = right.selectbox("Measure", sorted(subset.Measure.unique(), key=lambda k: labels.get(k, k)),
+                              format_func=lambda k: labels.get(k, k))
     subset = subset[subset.Measure == feature].copy()
     if subset.Language.nunique() > 1:
         language = st.selectbox("Recording language", sorted(subset.Language.unique()))
@@ -686,14 +976,41 @@ def progress_page():
         method = st.selectbox("Measurement method", sorted(subset.Method.unique()))
         subset = subset[subset.Method == method]
     subset["Date"] = pd.to_datetime(subset["Date"], utc=True).dt.tz_convert("Asia/Karachi")
+    try:
+        contexts = list_visit_contexts(actor()["id"], subset["Visit"].tolist())
+    except (PermissionError, LookupError):
+        contexts = {}
+    states = [contexts.get(v, {}).get("medication_state") if contexts.get(v) else None for v in subset["Visit"]]
+    from app.components.visit_context_panel import describe_assistance
+    from backend.services.visit_context import list_visit_assistance
+    try:
+        assistance = list_visit_assistance(actor()["id"], subset["Visit"].tolist())
+    except (PermissionError, LookupError):
+        assistance = {}
+    label, unit = labels.get(feature, feature), subset.iloc[-1]["Unit"]
+    first, latest = float(subset.iloc[0]["Value"]), float(subset.iloc[-1]["Value"])
+    cols = st.columns(3)
+    cols[0].metric("First accepted visit", f"{first:.4g}")
+    cols[1].metric("Latest", f"{latest:.4g}")
+    change = latest - first
+    percent = f" ({change / abs(first) * 100:+.0f}%)" if first else ""
+    cols[2].metric("Change since first", f"{change:+.3g}{percent}" if len(subset) > 1 else "—")
+    st.caption(f"{label}, in {unit}. {len(subset)} accepted visit{'s' if len(subset) != 1 else ''}.")
+    render_trend(subset["Date"].tolist(), subset["Value"].astype(float).tolist(), label, unit, states, key=f"trend_{pid}_{task}_{feature}")
+    st.caption("Only accepted recordings from the same task are compared. A change is a measured difference, not a judgement "
+               "of better or worse. Camera position, language, task instructions, assistance and medicine timing can all affect it.")
     from app.components.statistical_3d import module_statistics_panel
     current = next((visit["modules"][task] for visit in visits if visit.get("status") != "abandoned" and is_accepted(visit.get("modules", {}).get(task, {}))
                     and visit["modules"][task].get("method", visit["modules"][task].get("analysis_version", "Unspecified")) == subset.iloc[-1]["Method"]
                     and visit["modules"][task].get("language", "Not applicable") == subset.iloc[-1]["Language"]), None)
     if current:
-        module_statistics_panel(current, task, identity=f"progress_{patient_id()}_{task}", history=visits, default_view="history")
-    st.caption("Only accepted recordings from the same task are compared. Differences in camera position, language, task instructions or assistance can affect these measurements.")
-    st.dataframe(subset[["Date", "Value"]], hide_index=True)
+        with st.expander("3D statistical review"):
+            module_statistics_panel(current, task, identity=f"progress_{pid}_{task}", history=visits, default_view="history")
+    table = pd.DataFrame({"Date": subset["Date"].dt.strftime("%d %b %Y, %I:%M %p"), f"Value ({unit})": subset["Value"].round(4),
+                          "Medicine timing": [{"on": "ON", "off": "OFF", "wearing_off": "Wearing off", "unsure": "Not sure",
+                                               "none": "No PD medicine"}.get(s, "Not recorded") for s in states],
+                          "Help / walking aid": [describe_assistance(assistance.get(v)) or "Not recorded" for v in subset["Visit"]]})
+    st.dataframe(table, hide_index=True, width="stretch")
 
 
 def reports_page():
@@ -773,21 +1090,70 @@ def reports_page():
         private_download("Download report (JSON)", json.dumps(report, ensure_ascii=False, indent=2), user=actor(), assessment_id=item["id"], file_name=f"assessment-{item['id']}-report.json", mime="application/json", key=f"report_{item['id']}_{index}")
 
 
+STATUS_WORDS = {"draft": "In progress", "completed": "Completed", "abandoned": "Abandoned"}
+REVIEW_WORDS = {"reviewed": "Reviewed", "pending": "Awaiting review"}
+MED_WORDS = {"on": "ON", "wearing_off": "Wearing off", "off": "OFF", "unsure": "Not sure", "none": "No PD medicine"}
+
+
+def _caseload(user):
+    from backend.services.caseload import caseload_summary
+    rows = caseload_summary(user["id"])
+    if not rows:
+        return
+    waiting = sum(r["awaiting_review"] for r in rows)
+    falls = sum(1 for r in rows if r["falls_14d"])
+    cols = st.columns(3)
+    cols[0].metric("Patients", len(rows))
+    cols[1].metric("Visits awaiting review", waiting)
+    cols[2].metric("Patients reporting falls (14 days)", falls)
+    table = pd.DataFrame([{
+        "Patient": r["full_name"] + ("" if r["active"] else " (inactive)"),
+        "Last visit": _date_only(r["last_visit_at"]) if r["last_visit_at"] else "No visits",
+        "Awaiting review": r["awaiting_review"],
+        "Open visits": r["open_drafts"],
+        "Last check-in": datetime.fromisoformat(r["last_checkin"]).strftime("%d %b %Y") if r["last_checkin"] else "None",
+        "Falls (14 days)": r["falls_14d"],
+        "Medicine at last visit": MED_WORDS.get(r["latest_medication_state"], "Not recorded"),
+        "OFF / wearing off (7 days)": r.get("off_reports_7d", 0),
+        "Next planned review": datetime.fromisoformat(r["next_review"]).strftime("%d %b %Y") if r["next_review"] else "—",
+    } for r in sorted(rows, key=lambda r: (-r["awaiting_review"], -r["falls_14d"], r["full_name"]))])
+    with st.expander("Caseload", expanded=True):
+        st.caption("Sorted by visits awaiting review, then reported falls. Falls are the patient's own check-in answers.")
+        st.dataframe(table, hide_index=True, width="stretch",
+                     column_config={"Awaiting review": st.column_config.NumberColumn(format="%d"),
+                                    "Falls (14 days)": st.column_config.NumberColumn(format="%d")})
+
+
 def clinician_page():
+    from app.components.visit_context_panel import describe
+    from backend.services.visit_context import get_visit_context
     st.title("Clinician Dashboard")
+    user = actor()
+    _caseload(user)
+    section_header("Patient review", "Choose a patient and visit to review recordings, answers and context.")
     pid = patient_id()
     if st.button("Patient check-ins & care team follow-up"):
         go(care_plan_page)
     items = history(pid)
     if not items:
-        st.info("This patient has no assessments yet.")
+        empty_state("No visits yet", "This patient has not recorded an assessment. Their check-ins and goals are on the follow-up page.")
         return
     item = select_visit(items)
-    overview, movement, speech, adl, clinical, explanation = st.tabs(["Overview", "Movement & 3D", "Voice / Speech", "ADL", "Clinical context", "Explanation"])
+    context = get_visit_context(user["id"], item["id"])
+    overview, movement, speech, adl, clinical, explanation = st.tabs(["Overview", "Movement & 3D", "Voice / Speech", "Daily activities", "Clinical context", "Explanation"])
     with overview:
-        st.write(f"Assessment: {time_label(item['created_at'])}")
-        st.write(f"Status: {item['status']} · Review: {item.get('review_status', 'pending')}")
-        st.write("Available tasks: " + ", ".join(LABELS.get(t, t) for t in item.get("modules", {})))
+        reviewed = item.get("review_status") == "reviewed"
+        status_row([(STATUS_WORDS.get(item["status"], item["status"].title()), "care" if item["status"] == "completed" else "waiting"),
+                    (REVIEW_WORDS.get(item.get("review_status"), "Awaiting review"), "care" if reviewed else "waiting")])
+        st.write(f"Visit started {time_label(item['created_at'])}.")
+        tasks = [LABELS.get(t, t) for t in item.get("modules", {})]
+        st.write("Saved tasks: " + (", ".join(tasks) if tasks else "none yet") + ".")
+        st.write("Medicine timing (patient-reported): " + (describe(context) or "not recorded") + ".")
+        from app.components.visit_context_panel import describe_assistance
+        from backend.services.visit_context import get_visit_assistance
+        st.write("Help and walking aid (patient-reported): " + (describe_assistance(get_visit_assistance(user["id"], item["id"])) or "not recorded") + ".")
+        if context and context.get("note"):
+            st.caption("Patient's medicine note: " + plain_text(context["note"]))
         st.caption("Unrecorded modalities contribute no measurement or model output.")
         with st.form("clinical_review"):
             note = st.text_area("Review note", max_chars=3000)
@@ -861,13 +1227,20 @@ def admin_page():
     users, permissions, status, audit = st.tabs(["Users", "Permissions", "System Status", "Audit Logs"])
     records = services.list_users(user["id"])
     with users:
-        st.dataframe(pd.DataFrame(records), hide_index=True, width="stretch")
+        cols = st.columns(3)
+        cols[0].metric("Patients", sum(r["role"] == "patient" for r in records))
+        cols[1].metric("Clinicians", sum(r["role"] == "clinician" for r in records))
+        cols[2].metric("Inactive accounts", sum(not r["active"] for r in records))
+        st.dataframe(pd.DataFrame([{
+            "Name": r["full_name"], "Email": r["email"], "Role": r["role"].title(), "Language": r["language"],
+            "Status": "Active" if r["active"] else "Inactive", "Joined": _date_only(r.get("created_at")).strip("\u2066\u2069"),
+        } for r in records]), hide_index=True, width="stretch")
         with st.form("staff"):
             st.subheader("Create care-team account")
             name = st.text_input("Staff full name")
             email = st.text_input("Staff email")
             password = st.text_input("Initial password", type="password")
-            role = st.selectbox("Role", ["clinician", "admin"])
+            role = st.selectbox("Role", ["clinician", "admin"], format_func={"clinician": "Clinician", "admin": "Administrator"}.get)
             if st.form_submit_button("Create staff account"):
                 try:
                     services.create_staff(user["id"], name, email, password, role=role)

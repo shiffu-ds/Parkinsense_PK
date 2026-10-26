@@ -14,13 +14,15 @@ import plotly.graph_objects as go
 from ml.vision.live_overlay import focus_definition, observation_geometry, recent_observations
 from ml.vision.tasks import HAND_CONNECTIONS, POSE_CONNECTIONS
 
+from app.components.palette import VIEWPORT
+
 CAMERAS = {
     "Isometric": {"x": 1.35, "y": 0.65, "z": -1.65},
     "Front": {"x": 0, "y": 0.12, "z": -2.1},
     "Side": {"x": 2.1, "y": 0.12, "z": 0},
     "Top": {"x": 0, "y": 2.1, "z": -0.01},
 }
-_TEAL, _BLUE = "#54eaae", "#63b6ff"
+_TEAL, _BLUE = VIEWPORT["left"], VIEWPORT["right"]
 _JOINT_NAMES = {
     "hand": {0: "Wrist", 4: "Thumb tip", 8: "Index fingertip", 12: "Middle fingertip",
              16: "Ring fingertip", 20: "Little fingertip"},
@@ -49,15 +51,15 @@ def _layout(figure: go.Figure, task: str, camera: str, *, tracked: bool):
     axes = {}
     for name, limits in zip(("X", "Y", "Z"), ranges, strict=True):
         axes[name.lower() + "axis"] = {
-            "title": {"text": name + " · m", "font": {"size": 10, "color": "#9caec0"}},
+            "title": {"text": name + " · m", "font": {"size": 10, "color": VIEWPORT["text"]}},
             "range": limits, "autorange": False, "showbackground": False,
-            "gridcolor": "#243747", "zerolinecolor": "#36516a", "showspikes": False,
-            "tickfont": {"size": 9, "color": "#849bad"}, "nticks": 4,
+            "gridcolor": VIEWPORT["grid"], "zerolinecolor": VIEWPORT["axis"], "showspikes": False,
+            "tickfont": {"size": 9, "color": VIEWPORT["text"]}, "nticks": 4,
         }
     figure.update_layout(
-        template="plotly_dark", paper_bgcolor="#101e2c", plot_bgcolor="#101e2c", height=450,
+        template="plotly_dark", paper_bgcolor=VIEWPORT["ground"], plot_bgcolor=VIEWPORT["ground"], height=450,
         margin={"l": 0, "r": 0, "t": 12, "b": 8},
-        scene={**axes, "aspectmode": "data", "bgcolor": "#101e2c",
+        scene={**axes, "aspectmode": "data", "bgcolor": VIEWPORT["ground"],
                "camera": {"eye": CAMERAS.get(camera, CAMERAS["Isometric"]), "up": up,
                           "projection": {"type": "orthographic"}}, "dragmode": "orbit"},
         showlegend=False, uirevision=f"live-{task}-{camera}",
@@ -78,14 +80,14 @@ def build_live_3d_figure(observation: dict | None, task: str, *, history: Iterab
         _layout(figure, task, camera, tracked=False)
         figure.add_annotation(text="Waiting for clear tracking<br>Keep the selected body part in view",
                               showarrow=False, x=0.5, y=0.5, xref="paper", yref="paper",
-                              font={"size": 14, "color": "#a4b7c9"})
+                              font={"size": 14, "color": VIEWPORT["text"]})
         return figure
     points, valid = geometry
     connections = HAND_CONNECTIONS if focus["kind"] == "hand" else POSE_CONNECTIONS
     focused = {tuple(sorted(edge)) for edge in focus["edges"]}
     context = [edge for edge in connections if tuple(sorted(edge)) not in focused]
     figure.add_trace(go.Scatter3d(**_segments(points, valid, context), mode="lines",
-                                 name="Body context", line={"color": "#657e92", "width": 3},
+                                 name="Body context", line={"color": VIEWPORT["core"], "width": 3},
                                  opacity=0.36, hoverinfo="skip"))
     observations = recent_observations(observation, task, history) if show_trails else []
     if show_trails:

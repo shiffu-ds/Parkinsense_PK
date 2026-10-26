@@ -1,0 +1,107 @@
+[
+  {
+    "text": "The",
+    "start": 0.1,
+    "duration": 0.1625
+  },
+  {
+    "text": "voice",
+    "start": 0.275,
+    "duration": 0.325
+  },
+  {
+    "text": "module",
+    "start": 0.6125,
+    "duration": 0.4375
+  },
+  {
+    "text": "measures",
+    "start": 1.0625,
+    "duration": 0.3875
+  },
+  {
+    "text": "signal",
+    "start": 1.4625,
+    "duration": 0.3375
+  },
+  {
+    "text": "activity",
+    "start": 1.8125,
+    "duration": 0.5625
+  },
+  {
+    "text": "pauses",
+    "start": 2.5875,
+    "duration": 0.575
+  },
+  {
+    "text": "and",
+    "start": 3.375,
+    "duration": 0.225
+  },
+  {
+    "text": "estimated",
+    "start": 3.6125,
+    "duration": 0.575
+  },
+  {
+    "text": "pitch",
+    "start": 4.2,
+    "duration": 0.325
+  },
+  {
+    "text": "from",
+    "start": 4.5375,
+    "duration": 0.175
+  },
+  {
+    "text": "real",
+    "start": 4.725,
+    "duration": 0.3
+  },
+  {
+    "text": "audio",
+    "start": 5.0375,
+    "duration": 0.525
+  },
+  {
+    "text": "These",
+    "start": 6.4375,
+    "duration": 0.325
+  },
+  {
+    "text": "are",
+    "start": 6.775,
+    "duration": 0.125
+  },
+  {
+    "text": "acoustic",
+    "start": 6.9125,
+    "duration": 0.4875
+  },
+  {
+    "text": "measurements",
+    "start": 7.4125,
+    "duration": 0.625
+  },
+  {
+    "text": "not",
+    "start": 8.25,
+    "duration": 0.2625
+  },
+  {
+    "text": "a",
+    "start": 8.525,
+    "duration": 0.0625
+  },
+  {
+    "text": "Parkinson\u2019s",
+    "start": 8.6,
+    "duration": 0.6625
+  },
+  {
+    "text": "diagnosis",
+    "start": 9.275,
+    "duration": 0.8875
+  }
+]

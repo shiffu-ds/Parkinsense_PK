@@ -3,7 +3,9 @@
 import plotly.graph_objects as go
 import streamlit as st
 
-from app.components.design import empty_state, section_header
+from app.components.palette import chart_layout, scene_axis, tokens
+
+from app.components.design import empty_state, plain_text, section_header
 from backend import services
 from backend.services import validation as api
 
@@ -57,8 +59,8 @@ def validation_page():
     protocol = study["protocol"]
     st.caption(f"{protocol['task']} · {protocol['metric']} · {protocol['unit']} · {protocol['method_version']}")
     with st.expander("Prespecified protocol"):
-        st.write(protocol["notes"])
-        st.write(f"Reference: {protocol['reference_method']} · Planned N: {protocol['minimum_participants']} · MAE tolerance: {protocol['tolerance_mae']} {protocol['unit']}")
+        st.write(plain_text(protocol["notes"]))
+        st.write(f"Reference: {plain_text(protocol['reference_method'])} · Planned N: {protocol['minimum_participants']} · MAE tolerance: {protocol['tolerance_mae']} {protocol['unit']}")
         st.caption("Protocols are immutable. A different extractor, threshold or reference procedure requires a new study.")
     if patients:
         patient = st.selectbox("Study patient", patients, format_func=lambda p: p["full_name"])
@@ -108,11 +110,12 @@ def validation_page():
         unit = summary["unit"]
         fig = go.Figure(go.Scatter3d(x=[c["reference"] for c in paired], y=[c["measured"] for c in paired],
             z=[c["measured"] - c["reference"] for c in paired], mode="markers",
-            marker={"size": 6, "color": "#79d6c1"}, hovertemplate="Reference %{x:.3g}<br>Measured %{y:.3g}<br>Error %{z:.3g}<extra></extra>"))
-        fig.update_layout(height=410, margin={"l": 0, "r": 0, "b": 0, "t": 10},
-                          scene={"xaxis_title": f"Reference ({unit})", "yaxis_title": f"Measured ({unit})",
-                                 "zaxis_title": f"Error ({unit})"}, uirevision=study["id"])
-        st.plotly_chart(fig, width="stretch", key="validation_actual_3d")
+            marker={"size": 6, "color": tokens().accent}, hovertemplate="Reference %{x:.3g}<br>Measured %{y:.3g}<br>Error %{z:.3g}<extra></extra>"))
+        axis = scene_axis()
+        fig.update_layout(**chart_layout(), height=410, margin={"l": 0, "r": 0, "b": 0, "t": 10},
+                          scene={"xaxis": dict(axis, title=f"Reference ({unit})"), "yaxis": dict(axis, title=f"Measured ({unit})"),
+                                 "zaxis": dict(axis, title=f"Error ({unit})")}, uirevision=study["id"])
+        st.plotly_chart(fig, width="stretch", theme=None, key="validation_actual_3d")
     for field, rows in summary["strata"].items():
         with st.expander(f"Coverage by {field.replace('_', ' ')}"):
             st.dataframe(rows, hide_index=True, width="stretch")

@@ -1,15 +1,128 @@
+# ParkinSense-PK visual system. Colours, type and radius live here so native
+# Streamlit widgets, alerts and charts match the custom CSS in
+# app/components/design.py. Both themes are defined; Streamlit follows the
+# viewer's system preference and the Settings menu can switch between them.
+
+[client]
+toolbarMode = "minimal"
+
 [theme]
-base = "dark"
-primaryColor = "#85D4BF"
-backgroundColor = "#0F1A23"
-secondaryBackgroundColor = "#14212B"
-textColor = "#EDF1EC"
-font = "sans serif"
+font = "Atkinson Hyperlegible Next, Noto Naskh Arabic, system-ui, sans-serif"
+headingFont = "Atkinson Hyperlegible Next, Noto Naskh Arabic, system-ui, sans-serif"
+headingFontWeights = [700, 700, 650, 650, 600, 600]
+headingFontSizes = ["2.15rem", "1.45rem", "1.15rem", "1rem", "0.95rem", "0.9rem"]
+baseFontSize = 16
+baseRadius = "6px"
+buttonRadius = "6px"
+showSidebarBorder = true
+linkUnderline = true
+
+[[theme.fontFaces]]
+family = "Atkinson Hyperlegible Next"
+url = "app/static/fonts/atkinson-hyperlegible-next-latin-400-normal.woff2"
+weight = "400"
+style = "normal"
+
+[[theme.fontFaces]]
+family = "Atkinson Hyperlegible Next"
+url = "app/static/fonts/atkinson-hyperlegible-next-latin-400-italic.woff2"
+weight = "400"
+style = "italic"
+
+[[theme.fontFaces]]
+family = "Atkinson Hyperlegible Next"
+url = "app/static/fonts/atkinson-hyperlegible-next-latin-600-normal.woff2"
+weight = "600"
+style = "normal"
+
+[[theme.fontFaces]]
+family = "Atkinson Hyperlegible Next"
+url = "app/static/fonts/atkinson-hyperlegible-next-latin-700-normal.woff2"
+weight = "700"
+style = "normal"
+
+[[theme.fontFaces]]
+family = "Atkinson Hyperlegible Next"
+url = "app/static/fonts/atkinson-hyperlegible-next-latin-ext-400-normal.woff2"
+weight = "400"
+style = "normal"
+unicodeRange = "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+
+[[theme.fontFaces]]
+family = "Atkinson Hyperlegible Next"
+url = "app/static/fonts/atkinson-hyperlegible-next-latin-ext-700-normal.woff2"
+weight = "700"
+style = "normal"
+unicodeRange = "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+
+[[theme.fontFaces]]
+family = "Noto Naskh Arabic"
+url = "app/static/fonts/noto-naskh-arabic-arabic-400-normal.woff2"
+weight = "400"
+style = "normal"
+unicodeRange = "U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC"
+
+[[theme.fontFaces]]
+family = "Noto Naskh Arabic"
+url = "app/static/fonts/noto-naskh-arabic-arabic-600-normal.woff2"
+weight = "600"
+style = "normal"
+unicodeRange = "U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC"
+
+[[theme.fontFaces]]
+family = "Noto Naskh Arabic"
+url = "app/static/fonts/noto-naskh-arabic-arabic-700-normal.woff2"
+weight = "700"
+style = "normal"
+unicodeRange = "U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC"
+
+# Light: cool ward paper, deep ink and one sober green for actions.
+[theme.light]
+primaryColor = "#1D6B52"
+backgroundColor = "#F6F7F5"
+secondaryBackgroundColor = "#ECEFED"
+textColor = "#16262A"
+borderColor = "#D5DCD9"
+linkColor = "#1D6B52"
+greenColor = "#1D6B52"
+blueColor = "#3F6E9C"
+orangeColor = "#9A5B12"
+yellowColor = "#9A5B12"
+redColor = "#A3392F"
+grayColor = "#6B7A7E"
+dataframeHeaderBackgroundColor = "#ECEFED"
+chartCategoricalColors = ["#1D6B52", "#3F6E9C", "#B0731E", "#7A5C99", "#A3463A", "#4F8A8B"]
+
+[theme.light.sidebar]
+backgroundColor = "#EEF1EF"
+secondaryBackgroundColor = "#E3E8E5"
+
+# Dark: the same structure for evening use; ink and green are lifted for contrast.
+[theme.dark]
+primaryColor = "#6FC3A2"
+backgroundColor = "#111A1C"
+secondaryBackgroundColor = "#1A2629"
+textColor = "#E7EDEA"
+borderColor = "#2C3B3E"
+linkColor = "#8AD3B5"
+greenColor = "#6FC3A2"
+blueColor = "#8DB2DA"
+orangeColor = "#E0B270"
+yellowColor = "#E0B270"
+redColor = "#EE9A8F"
+grayColor = "#8D9C9B"
+dataframeHeaderBackgroundColor = "#1A2629"
+chartCategoricalColors = ["#6FC3A2", "#8DB2DA", "#E0B270", "#B9A0D6", "#E39A8E", "#8CC5C5"]
+
+[theme.dark.sidebar]
+backgroundColor = "#142023"
+secondaryBackgroundColor = "#1C2A2D"
 
 [server]
 maxUploadSize = 100
 headless = true
 enableXsrfProtection = true
+enableStaticServing = true
 
 [browser]
 gatherUsageStats = false

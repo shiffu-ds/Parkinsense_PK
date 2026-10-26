@@ -1,0 +1,122 @@
+[
+  {
+    "text": "This",
+    "start": 0.1,
+    "duration": 0.2875
+  },
+  {
+    "text": "walking",
+    "start": 0.4,
+    "duration": 0.425
+  },
+  {
+    "text": "replay",
+    "start": 0.8375,
+    "duration": 0.4125
+  },
+  {
+    "text": "comes",
+    "start": 1.2625,
+    "duration": 0.3375
+  },
+  {
+    "text": "from",
+    "start": 1.6125,
+    "duration": 0.125
+  },
+  {
+    "text": "a",
+    "start": 1.75,
+    "duration": 0.075
+  },
+  {
+    "text": "published",
+    "start": 1.8375,
+    "duration": 0.475
+  },
+  {
+    "text": "clinical",
+    "start": 2.325,
+    "duration": 0.4375
+  },
+  {
+    "text": "recording",
+    "start": 2.775,
+    "duration": 0.6125
+  },
+  {
+    "text": "The",
+    "start": 4.2625,
+    "duration": 0.15
+  },
+  {
+    "text": "model",
+    "start": 4.425,
+    "duration": 0.325
+  },
+  {
+    "text": "tracks",
+    "start": 4.7625,
+    "duration": 0.3625
+  },
+  {
+    "text": "body",
+    "start": 5.1375,
+    "duration": 0.3
+  },
+  {
+    "text": "landmarks",
+    "start": 5.45,
+    "duration": 0.5875
+  },
+  {
+    "text": "in",
+    "start": 6.05,
+    "duration": 0.15
+  },
+  {
+    "text": "three",
+    "start": 6.2125,
+    "duration": 0.225
+  },
+  {
+    "text": "dimensions",
+    "start": 6.45,
+    "duration": 0.7625
+  },
+  {
+    "text": "These",
+    "start": 8.075,
+    "duration": 0.375
+  },
+  {
+    "text": "estimates",
+    "start": 8.4625,
+    "duration": 0.5125
+  },
+  {
+    "text": "are",
+    "start": 8.9875,
+    "duration": 0.0875
+  },
+  {
+    "text": "not",
+    "start": 9.0875,
+    "duration": 0.275
+  },
+  {
+    "text": "calibrated",
+    "start": 9.375,
+    "duration": 0.65
+  },
+  {
+    "text": "clinical",
+    "start": 10.0375,
+    "duration": 0.425
+  },
+  {
+    "text": "measurements",
+    "start": 10.475,
+    "duration": 0.7
+  }
+]

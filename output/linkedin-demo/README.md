@@ -1,9 +1,10 @@
 # ParkinSense PK — LinkedIn testing demo
 
 ## Deliverables
-- `ParkinSense-PK-Testing-Demo.mp4`: 92 seconds; 1080 × 1350; 24 fps; H.264/yuv420p; fast-start MP4. English captions burned into the frames. Deliberately silent, suitable for watching with sound off.
+- **Use `ParkinSense-PK-Voice-Captions.mp4` for posting.** Revised 92-second video; 1080 × 1350; 24 fps; H.264/yuv420p plus AAC English narration; fast-start MP4. Larger, synchronized English captions are permanently burned into the frames, so they remain visible even with subtitles disabled.
+- `ParkinSense-PK-Testing-Demo.mp4`: the earlier silent version, retained as the visual source for the revision.
 - `ParkinSense-PK-cover.jpg`: matching cover image.
-- `ParkinSense-PK-English.srt`: optional subtitle sidecar. Captions already appear in the video; avoid displaying duplicate captions.
+- `ParkinSense-PK-Voice-Captions.srt`: synchronized subtitles for the revised video. They are optional because the video already displays them. `ParkinSense-PK-English.srt` belongs to the earlier version.
 - `LinkedIn-post.txt`: proposed post text, including credits. Copy/edit before posting; nothing has been published.
 - `storyboard.json`: scene timings and captions.
 
@@ -38,3 +39,17 @@ Run from the repository root with its existing virtual environment:
 ```
 
 The render requires the locally retained source media, audit evidence, Pillow, NumPy, SoundFile, Lato fonts and FFmpeg. It does not connect to or modify the running app, patient database or LinkedIn.
+
+## Voice and caption revision
+English narration is synthesized with the standard en-US-AriaNeural voice through edge-tts. It is a narrator, not a patient recording or a clinician endorsement. Only the public demo script was sent for speech synthesis. The audio is aligned scene by scene, with small tempo adjustments where needed, then normalized to a target of -16 LUFS and encoded to AAC.
+
+Captions use word-boundary timing from the generated speech, grouped into short phrases, with a maximum of two lines. Their font is 44 pixels on the 1080 × 1350 canvas, increased from the earlier 28-pixel paragraphs. The text is burned into a high-contrast panel; no player subtitle support is required.
+
+To reproduce after the original visual MP4 exists:
+
+```sh
+output/linkedin-demo/.voice-venv/bin/python output/linkedin-demo/add_voice.py
+.venv/bin/python output/linkedin-demo/compose_voice_captions.py
+```
+
+The synthesis environment requires `edge-tts` and network access for uncached phrases. The composition step uses the already installed project image/audio libraries and FFmpeg.

@@ -56,12 +56,19 @@ def _author_name(session, user_id):
     return author.full_name if author else "Unknown author"
 
 
+def _helper(session, checkin_id):
+    from backend.db.context_models import CheckinAssistance
+    row = session.get(CheckinAssistance, checkin_id)
+    return row.helper if row else None
+
+
 def _checkin_dict(session, row):
     svc = _services()
     return {
         "id": row.id, "patient_id": row.patient_id, "date": row.date.isoformat(),
         "responses": {field: getattr(row, field) for field in CHECKIN_FIELDS}
-        | {"falls": row.falls, "note": row.note},
+        | {"falls": row.falls, "note": row.note}
+        | ({"helper": helper} if (helper := _helper(session, row.id)) else {}),
         "source": "patient_self_report", "recorded_by": row.recorded_by,
         "recorded_by_role": row.recorded_by_role, "author_name": _author_name(session, row.recorded_by),
         "created_at": svc._iso(row.created_at), "updated_at": svc._iso(row.updated_at),
@@ -99,7 +106,7 @@ def save_checkin(actor_id, responses: dict, patient_id=None) -> dict:
     """
     svc = _services()
     responses = svc._json(responses)
-    unknown = set(responses) - set(CHECKIN_FIELDS) - {"date", "falls", "note"}
+    unknown = set(responses) - set(CHECKIN_FIELDS) - {"date", "falls", "note", "helper"}
     if unknown:
         raise ValueError("Check-in contains unsupported fields.")
     values = {}
@@ -111,6 +118,10 @@ def save_checkin(actor_id, responses: dict, patient_id=None) -> dict:
     falls = responses.get("falls")
     if falls is not None and type(falls) is not bool:
         raise ValueError("Falls must be yes, no, or unknown.")
+    from backend.db.context_models import HELPERS, CheckinAssistance
+    helper = responses.get("helper")
+    if helper is not None and helper not in HELPERS:
+        raise ValueError("Choose who helped from the list, or leave it blank.")
     note = _text(responses.get("note", ""), field="Note", limit=2000)
     checkin_date = _date(responses.get("date"), field="Check-in date", default=_today())
     if checkin_date > _today():
@@ -132,6 +143,15 @@ def save_checkin(actor_id, responses: dict, patient_id=None) -> dict:
         row.falls, row.note = falls, note
         row.recorded_by, row.recorded_by_role = actor.id, actor.role
         row.updated_at = utc_now()
+        session.flush()
+        assistance = session.get(CheckinAssistance, row.id)
+        if helper is None and assistance is not None:
+            session.delete(assistance)
+        elif helper is not None:
+            if assistance is None:
+                session.add(CheckinAssistance(checkin_id=row.id, helper=helper))
+            else:
+                assistance.helper = helper
         session.flush()
         svc._audit(session, actor.id, "care.checkin_saved", "daily_checkin", row.id, role=actor.role)
         return _checkin_dict(session, row)

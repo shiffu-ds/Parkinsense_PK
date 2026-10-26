@@ -46,12 +46,18 @@ def ui_text(app):
 
 @pytest.mark.parametrize("language", copy.SUPPORTED_LANGUAGES)
 def test_every_task_has_specific_local_instructions_and_preserves_recording_limits(language):
-    assert set(copy.TASK_STEPS) == set(TASKS)
+    from ml.touch import TOUCH_TASKS
+    assert set(copy.TASK_STEPS) == set(TASKS) | set(TOUCH_TASKS)
     for task, spec in TASKS.items():
         instructions = copy.task_steps(task, language)
         assert len(instructions) == 3 and all(step.strip() for step in instructions)
         assert str(spec["min_seconds"]) in instructions[-1] and "45" in instructions[-1]
         assert copy.task_label(task, language).strip()
+    for task, (kind, _side) in TOUCH_TASKS.items():
+        instructions = copy.task_steps(task, language)
+        assert len(instructions) == 3 and all(step.strip() for step in instructions)
+        assert kind != "tapping" or "20" in instructions[-1]
+        assert copy.task_label(task, language) != task.replace("_", " ").title()
     assert set(copy.VOICE_PROMPTS) == {"vowel", "sentence", "natural"}
     assert set(copy.ADL_LABELS) == set(ADL_ITEMS)
     assert set(copy.ADL_CHOICES) == set(ADL_SCALE)

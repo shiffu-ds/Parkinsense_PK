@@ -18,9 +18,11 @@ from sqlalchemy import delete, func, select, text, update
 
 from backend.db import transaction
 from backend.db.models import AssessmentFile, Patient, User, utc_now
-from backend.db.production_models import AccountSecurity, MediaArtifact, MediaGrant, RecoveryAttempt, RecoveryToken
+from backend.db.production_models import (
+    AccountSecurity, LoginFailure, MediaArtifact, MediaGrant, RecoveryAttempt, RecoveryToken,
+)
 from backend.security import hash_password
-from backend.services import _actor, _admin, _assessment_access, _audit, _consented, _id, _iso
+from backend.services import _actor, _admin, _assessment_access, _audit, _consented, _id, _iso, login_limiter_hash
 from backend.storage import resolve_key
 
 TOKEN_RE = re.compile(r"[A-Za-z0-9_-]{43}\Z")
@@ -321,6 +323,8 @@ def redeem_recovery_token(token: str, new_password: str, *, request_key: str = "
                         RecoveryToken.revoked_at.is_(None)).values(revoked_at=now))
                     session.execute(update(MediaGrant).where(
                         MediaGrant.actor_id == user.id, MediaGrant.revoked_at.is_(None)).values(revoked_at=now))
+                    # A verified recovery lets the person sign in straight away with the new password.
+                    session.execute(delete(LoginFailure).where(LoginFailure.limiter_hash == login_limiter_hash(user.email)))
                     _audit(session, user.id, "recovery.completed", "user", user.id)
                     success = True
         session.add(RecoveryAttempt(token_hash=token_hash, limiter_hash=limiter_hash, succeeded=int(success)))

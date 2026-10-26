@@ -53,7 +53,7 @@ def get_engine():
 def init_db() -> None:
     # Register additive workflow/security tables before create_all. Imports
     # stay here so service modules can safely import the transaction helper.
-    from backend.db import pilot_models, production_models, validation_models, privacy_models  # noqa: F401
+    from backend.db import pilot_models, production_models, validation_models, privacy_models, context_models  # noqa: F401
     engine = get_engine()
     Base.metadata.create_all(engine)
     if engine.dialect.name == "sqlite" and engine.url.database not in {None, "", ":memory:"}:

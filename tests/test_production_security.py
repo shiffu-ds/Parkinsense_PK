@@ -440,3 +440,15 @@ def test_database_json_payload_is_not_confused_with_scalar_type_metadata():
                                   Decimal("13.2500"), b"\x00\xff\x10", None, False])
 def test_backup_scalar_types_round_trip(value):
     assert decoded(_encoded(value)) == value
+
+
+def test_verified_recovery_lifts_a_sign_in_pause(accounts):
+    a = accounts
+    for _ in range(svc.LOGIN_FAILURE_LIMIT):
+        with pytest.raises(PermissionError):
+            svc.authenticate(a["patient"]["email"], "a wrong password")
+    with pytest.raises(PermissionError, match="Too many"):
+        svc.authenticate(a["patient"]["email"], PASSWORD)
+    code = issue_recovery_token(a["admin"]["id"], a["patient"]["id"], identity_verified=True)
+    redeem_recovery_token(code, NEW_PASSWORD, request_key="test-browser")
+    assert svc.authenticate(a["patient"]["email"], NEW_PASSWORD)["id"] == a["patient"]["id"]

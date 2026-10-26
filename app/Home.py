@@ -13,7 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from backend.db import init_db
 from backend import services
 from app import views
-from app.components.design import brand_wordmark
+from app.components.design import account_block, logo_paths
 from app.components.data_privacy import data_privacy_page, data_requests_page
 from app.components.validation_review import validation_page
 from app.components.clinic_pilot import clinic_pilot_page
@@ -21,12 +21,19 @@ from backend.production import verify_session_revision
 from app.components.patient_navigation import navigation_label
 from app.components.public_demo import public_demo_page
 
-st.set_page_config(page_title="ParkinSense-PK", page_icon=":material/accessibility_new:", layout="wide")
+BRAND_MARK = ROOT / "app" / "static" / "brand" / "mark.svg"
+st.set_page_config(page_title="ParkinSense-PK", page_icon=str(BRAND_MARK), layout="wide")
 
 
 @st.cache_resource
 def initialize():
     init_db()
+    # No session survives a restart, so older capture clips are abandoned.
+    from backend.storage import sweep_stale_captures
+    try:
+        sweep_stale_captures()
+    except (OSError, ValueError):
+        pass  # Housekeeping must never block sign-in.
     return True
 
 
@@ -38,6 +45,8 @@ except Exception:
     st.stop()
 
 views.style()
+_logo, _mark = logo_paths()
+st.logo(_logo, icon_image=_mark, size="large")
 
 
 def render(page):
@@ -76,8 +85,7 @@ if actor is None:
 else:
     st.session_state.update(logged_in=True, role=actor["role"], active_patient_id=actor.get("patient_id"))
     with st.sidebar:
-        brand_wordmark(compact=True)
-        st.caption(f"{actor['full_name']} · {actor['role'].title()}")
+        account_block(actor["full_name"], {"patient": "Patient", "clinician": "Clinician", "admin": "Administrator"}.get(actor["role"], actor["role"].title()))
         if st.button(nav_title("Log out"), width="stretch"):
             views.clear_session()
             st.rerun()
@@ -86,7 +94,7 @@ else:
         pages = {
             nav_title("My care"): [
                 st.Page(views.patient_home, title=nav_title("Home"), default=True),
-                st.Page(views.my_care_page, title=nav_title("My Care")),
+                st.Page(views.my_care_page, title=nav_title("Check-in & goals")),
                 st.Page(views.assessment_hub, title=nav_title("Start Assessment")),
             ],
             nav_title("Movement"): [
@@ -95,10 +103,12 @@ else:
                 st.Page(views.hand_page, title=nav_title("Hand / Finger")),
                 st.Page(views.transfer_page, title=nav_title("Sit-to-Stand")),
                 st.Page(views.reach_page, title=nav_title("Reach / Grasp")),
+                st.Page(views.touch_page, title=nav_title("Spiral & tapping")),
             ],
             nav_title("Voice and daily life"): [
                 st.Page(views.voice_page, title=nav_title("Voice / Speech")),
-                st.Page(views.adl_page, title=nav_title("ADL Questionnaire")),
+                st.Page(views.adl_page, title=nav_title("Daily activities")),
+                st.Page(views.practice_page, title=nav_title("Practice")),
             ],
             nav_title("My history"): [
                 st.Page(views.results_page, title=nav_title("My Results")),

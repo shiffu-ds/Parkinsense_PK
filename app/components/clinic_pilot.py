@@ -6,7 +6,9 @@ import json
 import plotly.graph_objects as go
 import streamlit as st
 
-from app.components.design import empty_state, section_header, status_pill
+from app.components.palette import chart_layout, scene_axis, tokens
+
+from app.components.design import empty_state, plain_text, section_header, status_pill
 from backend import services
 from backend.services import pilot as api
 
@@ -80,14 +82,12 @@ def _actual_figure(rows, reviews=False):
         z = [row["completed_tasks"] for row in selected]
         labels = ("Planned tasks (count)", "Attempted tasks (count)", "Completed tasks (count)")
     figure = go.Figure(go.Scatter3d(x=x, y=y, z=z, mode="markers",
-                                   marker={"size": 6, "color": "#85d4bf", "opacity": 0.9},
+                                   marker={"size": 6, "color": tokens().accent, "opacity": 0.9},
                                    text=[row["observed_on"] for row in selected],
                                    hovertemplate="Observed %{text}<br>" + labels[0] + ": %{x:.2f}<br>" +
                                    labels[1] + ": %{y:.2f}<br>" + labels[2] + ": %{z:.2f}<extra></extra>"))
-    axes = {"backgroundcolor": "#172832", "gridcolor": "#38505b", "zerolinecolor": "#55717d",
-            "showbackground": True}
-    figure.update_layout(height=390, margin={"l": 0, "r": 0, "t": 5, "b": 0},
-                         paper_bgcolor="#14212b", font={"color": "#dfece7"},
+    axes = scene_axis()
+    figure.update_layout(**chart_layout(), height=390, margin={"l": 0, "r": 0, "t": 5, "b": 0},
                          scene={"xaxis": dict(axes, title=labels[0]), "yaxis": dict(axes, title=labels[1]),
                                 "zaxis": dict(axes, title=labels[2]), "aspectmode": "cube"},
                          uirevision="clinic-pilot-review" if reviews else "clinic-pilot-tasks")
@@ -296,7 +296,7 @@ def clinic_pilot_page(actor=None):
     with protocol:
         st.json(current["targets"])
         if current["notes"]:
-            st.write(current["notes"])
+            st.write(plain_text(current["notes"]))
         if current["status"] == "draft" and current["plan_locked_at"] is None:
             with st.expander("Edit the pilot plan"):
                 _pilot_form(actor["id"], current)
